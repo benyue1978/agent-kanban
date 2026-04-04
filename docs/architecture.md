@@ -51,6 +51,8 @@ The runtime layer includes:
 - actor identity
 - local auth / API token
 
+`kanban_url` belongs to runtime/session connection context, not project domain identity.
+
 The system should keep domain identity and runtime execution context separate.
 
 ## Components
@@ -165,3 +167,4 @@ If eligibility changed concurrently, backend should reject the operation with a 
 - summary generation automation
 - Git integration enhancements
 - richer execution runtime bindings beyond local repo context
+- repo URL canonicalization / normalization rules

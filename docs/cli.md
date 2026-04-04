@@ -34,6 +34,8 @@ Recommended conceptual model:
 - local cwd / repo_path = local execution context
 - `kanban_url` = task system endpoint
 
+`kanban_url` is runtime/session connection config, not project domain identity.
+
 ## Commands
 
 ### List cards
@@ -72,9 +74,13 @@ edit card.md
 
 `kanban comment --id 123 --body "..." --kind progress`
 
-## Structured command result contract
+## Structured Command Result Contract
 
-Structured commands should return machine-usable results including, where relevant:
+This document is the normative source for structured command input/output expectations.
+
+Structured commands should return machine-usable results.
+
+Where relevant, responses should include:
 
 - card id
 - new revision

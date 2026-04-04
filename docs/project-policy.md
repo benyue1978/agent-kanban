@@ -56,13 +56,25 @@ Meaning:
 
 Type:
 
-- mapping or policy table
+- mapping / policy table
 
 Meaning:
 
 - which actor types are allowed to perform specific transitions
 
-A minimal implementation may keep this implicit in backend logic, but the policy concept should exist.
+This field should stay small in V1. It is not intended to become a general ACL system.
+
+## Minimal Example Shape
+
+A V1 policy may represent transition actors conceptually like this:
+
+- `new_to_ready: [human, agent_if_explicit_human_instruction]`
+- `ready_to_in_progress: [human, owner, agent_if_policy_allows_pick]`
+- `in_progress_to_in_review: [owner, human]`
+- `in_review_to_done: [human, agent_if_allow_agent_review]`
+- `in_review_to_in_progress: [human, agent_if_allow_agent_review]`
+
+The exact implementation can vary, but the meaning should remain consistent.
 
 ## Recommended Defaults for V1
 

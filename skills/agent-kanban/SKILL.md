@@ -15,13 +15,15 @@ The goal is to ensure that agents can reliably:
 - update state
 - leave clear history
 
-This skill assumes the system model defined in the repo docs:
+This skill assumes the system model defined in the repo docs.
 
-- repo is authoritative for code and artifacts
-- Kanban is authoritative for task process and progress
-- cards are execution harnesses
-- workflow rules are enforced by backend API
-- only two actor types exist in V1: human and agent
+## Normative Source
+
+The repository docs are the normative source for system rules.
+
+This skill operationalizes those rules for agents.
+
+If workflow, policy, markdown, or CLI rules change in repo docs, this skill must be updated accordingly.
 
 ## Runtime Model
 
@@ -47,6 +49,8 @@ These may come from:
 - local config
 - environment variables
 - explicit CLI arguments
+
+`kanban_url` is runtime/session connection config, not project identity.
 
 ## Core Principles
 

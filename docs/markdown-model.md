@@ -70,6 +70,8 @@ These commands update specific parts of the card safely.
 
 `kanban comment --id 123 --body "..." --kind progress`
 
+The authoritative command result contract lives in `docs/cli.md`.
+
 ## Section Contract
 
 V1 should not attempt to support arbitrary markdown structure for protected card sections.
@@ -131,20 +133,6 @@ When two actors attempt to take the same Ready card into In Progress concurrentl
 
 - backend should atomically verify eligibility, assign owner, and change state
 - if eligibility changed concurrently, backend should reject with `claim_conflict` or another stable machine-usable conflict error
-
-## Structured command result contract
-
-Structured commands should return machine-usable results.
-
-Where relevant, responses should include:
-
-- card id
-- new revision
-- resulting state
-- owner
-- machine-usable error on failure
-
-This helps agent skills behave predictably.
 
 ## Suggested Backend Behavior
 
