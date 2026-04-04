@@ -162,7 +162,8 @@ Use this shape:
   "scripts": {
     "check:tooling": "node scripts/check-tooling.mjs",
     "db:up": "docker compose up -d postgres",
-    "db:down": "docker compose down -v",
+    "db:down": "docker compose down",
+    "db:reset": "docker compose down -v",
     "test": "pnpm -r test"
   },
   "devDependencies": {
@@ -177,14 +178,38 @@ Use this shape:
 // scripts/check-tooling.mjs
 import { spawnSync } from 'node:child_process';
 
+const nodeMajor = Number.parseInt(process.versions.node.split('.')[0] ?? '', 10);
+const pnpmVersion = spawnSync('pnpm', ['-v'], { encoding: 'utf8' });
+const pnpmVersionText = (pnpmVersion.stdout || pnpmVersion.stderr || '').trim();
+const pnpmMajor = Number.parseInt(pnpmVersionText.split('.')[0] ?? '', 10);
+
+let failed = false;
+
+function fail(message) {
+  failed = true;
+  console.error(message);
+}
+
+if (nodeMajor !== 24) {
+  fail(`unsupported:node:${process.versions.node}`);
+} else {
+  console.log(`node: ${process.versions.node}`);
+}
+
+if (pnpmVersion.status !== 0 || pnpmVersion.error) {
+  fail('missing:pnpm');
+} else if (pnpmMajor !== 10) {
+  fail(`unsupported:pnpm:${pnpmVersionText}`);
+} else {
+  console.log(`pnpm: ${pnpmVersionText}`);
+}
+
 const checks = [
-  ['node', ['-v']],
-  ['pnpm', ['-v']],
   ['docker', ['--version']],
+  ['docker', ['compose', 'version']],
   ['psql', ['--version']],
 ];
 
-let failed = false;
 for (const [cmd, args] of checks) {
   const result = spawnSync(cmd, args, { encoding: 'utf8' });
   if (result.status !== 0) {
@@ -211,7 +236,7 @@ pnpm install
 
 Expected:
 
-- the tooling script prints versions for `node`, `pnpm`, `docker`, and `psql`
+- the tooling script prints versions for `node`, `pnpm`, `docker`, `docker compose`, and `psql`
 - `pnpm install` creates `pnpm-lock.yaml` and completes without workspace errors
 
 - [ ] **Step 4: Verify Docker-backed PostgreSQL can start**
@@ -228,7 +253,7 @@ Expected:
 
 - the `postgres` service reaches a running state
 - `docker compose ps` shows the container as healthy or running
-- teardown succeeds cleanly
+- `db:down` stops the service without deleting the volume; use `db:reset` when you want a destructive reset
 
 - [ ] **Step 5: Commit**
 
