@@ -3,7 +3,12 @@
 .next/
 node_modules/
 coverage/
+.playwright/
+.cache/
+.parcel-cache/
 .env*
 !.env.example
 **/generated/prisma/
 **/.prisma/
+**/playwright-report/
+**/test-results/
