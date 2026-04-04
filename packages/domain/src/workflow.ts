@@ -58,7 +58,7 @@ export function canTransition(input: WorkflowTransitionInput): void {
   }
 
   if (input.from === CardState.New && input.to === CardState.Ready) {
-    if (input.requiredSectionsPresent === false) {
+    if (input.requiredSectionsPresent !== true) {
       throwWorkflowError(
         "missing_required_section",
         "required sections must be present before moving a card to Ready",
@@ -119,6 +119,14 @@ export function canTransition(input: WorkflowTransitionInput): void {
       );
     }
 
+    if (input.actorId === undefined) {
+      throwWorkflowError(
+        "missing_owner",
+        "review transitions require reviewer identity",
+        { from: input.from, to: input.to }
+      );
+    }
+
     if (input.actorKind === "agent" && !isSameActor(input.actorId, input.ownerId)) {
       throwWorkflowError(
         "forbidden_action",
@@ -139,7 +147,15 @@ export function canTransition(input: WorkflowTransitionInput): void {
       );
     }
 
-    if (input.reviewRationalePresent === false) {
+    if (input.actorId === undefined) {
+      throwWorkflowError(
+        "missing_owner",
+        "review transitions require reviewer identity",
+        { from: input.from, to: input.to }
+      );
+    }
+
+    if (input.reviewRationalePresent !== true) {
       throwWorkflowError(
         "missing_required_section",
         "review rationale is required before reopening a card",
@@ -166,7 +182,15 @@ export function canTransition(input: WorkflowTransitionInput): void {
       );
     }
 
-    if (input.summaryPresent === false) {
+    if (input.actorId === undefined) {
+      throwWorkflowError(
+        "missing_owner",
+        "review transitions require reviewer identity",
+        { from: input.from, to: input.to }
+      );
+    }
+
+    if (input.summaryPresent !== true) {
       throwWorkflowError(
         "summary_required",
         "a final summary is required before a card can be completed",

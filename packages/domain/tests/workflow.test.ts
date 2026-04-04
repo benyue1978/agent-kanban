@@ -35,8 +35,24 @@ describe("workflow", () => {
           from: "In Review",
           to: "Done",
           actorKind: "human",
+          actorId: "human-1",
           reviewGatePassed: true,
           summaryPresent: false,
+          ownerId: "collaborator-1",
+        })
+      )
+    ).toBe("summary_required");
+  });
+
+  it("rejects omitted summary presence before In Review to Done", () => {
+    expect(
+      getErrorCode(() =>
+        canTransition({
+          from: "In Review",
+          to: "Done",
+          actorKind: "human",
+          actorId: "human-1",
+          reviewGatePassed: true,
           ownerId: "collaborator-1",
         })
       )
@@ -50,7 +66,23 @@ describe("workflow", () => {
           from: "In Review",
           to: "Done",
           actorKind: "human",
+          actorId: "human-1",
           reviewGatePassed: false,
+          summaryPresent: true,
+          ownerId: "collaborator-1",
+        })
+      )
+    ).toBe("review_gate_not_passed");
+  });
+
+  it("rejects omitted review gate presence before In Review to Done", () => {
+    expect(
+      getErrorCode(() =>
+        canTransition({
+          from: "In Review",
+          to: "Done",
+          actorKind: "human",
+          actorId: "human-1",
           summaryPresent: true,
           ownerId: "collaborator-1",
         })
@@ -77,6 +109,49 @@ describe("workflow", () => {
     ).toBe("forbidden_action");
   });
 
+  it("rejects missing actor identity on review to done transitions", () => {
+    expect(
+      getErrorCode(() =>
+        canTransition({
+          from: "In Review",
+          to: "Done",
+          actorKind: "agent",
+          ownerId: "collaborator-1",
+          reviewGatePassed: true,
+          summaryPresent: true,
+        })
+      )
+    ).toBe("missing_owner");
+  });
+
+  it("rejects missing actor identity on review reopen transitions", () => {
+    expect(
+      getErrorCode(() =>
+        canTransition({
+          from: "In Review",
+          to: "In Progress",
+          actorKind: "agent",
+          ownerId: "collaborator-1",
+          reviewRationalePresent: true,
+        })
+      )
+    ).toBe("missing_owner");
+  });
+
+  it("rejects omitted review rationale before In Review to In Progress", () => {
+    expect(
+      getErrorCode(() =>
+        canTransition({
+          from: "In Review",
+          to: "In Progress",
+          actorKind: "agent",
+          actorId: "agent-1",
+          ownerId: "collaborator-1",
+        })
+      )
+    ).toBe("missing_required_section");
+  });
+
   it("rejects agent pickup of an unassigned Ready card when policy forbids it", () => {
     expect(
       getErrorCode(() =>
@@ -90,6 +165,18 @@ describe("workflow", () => {
         })
       )
     ).toBe("forbidden_action");
+  });
+
+  it("rejects omitted required sections before Ready", () => {
+    expect(
+      getErrorCode(() =>
+        canTransition({
+          from: "New",
+          to: "Ready",
+          actorKind: "human",
+        })
+      )
+    ).toBe("missing_required_section");
   });
 
   it("rejects self-review when allowSelfReview is false", () => {
