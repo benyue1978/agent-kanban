@@ -146,8 +146,8 @@ Examples:
 
 ### Identity behavior
 
-- the CLI authenticates with a local token or equivalent config
-- the web UI authenticates as a named human actor through a lightweight local mechanism
+- the CLI authenticates with a project-local bearer token stored in local config or environment variables
+- the web UI authenticates as a named human actor through a lightweight local session backed by the same collaborator identity table
 - the system records actor identity on comments, transitions, assignments, and events
 
 This gives reliable ownership and audit behavior without pulling in hosted-account complexity.
@@ -256,7 +256,6 @@ Must-log event types:
 - `summary_updated`
 - `comment_added`
 - `card_archived`
-- `card_reopened` if reopen support is implemented in this slice
 
 Purpose:
 
@@ -331,7 +330,7 @@ Requires:
 - title exists
 - Goal exists
 - Definition of Done exists
-- scope is sufficiently clear
+- Scope section exists and is not empty
 
 Triggered by:
 
@@ -590,7 +589,7 @@ After import:
 
 - new planning should happen in the system
 - repo seed docs remain reference material only
-- retained seed docs should be marked historical or backfilled before the project calls the bootstrap complete
+- retained seed docs should be marked historical or backfilled before bootstrap is considered complete
 
 ## Implementation Order
 
