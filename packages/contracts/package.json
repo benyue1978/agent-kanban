@@ -1,5 +1,6 @@
 {
   "name": "@agent-kanban/contracts",
+  "version": "0.0.0",
   "private": true,
   "type": "module",
   "main": "./dist/index.js",

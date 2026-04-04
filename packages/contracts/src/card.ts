@@ -39,17 +39,6 @@ export interface ActorRef {
   displayName: string | null;
 }
 
-export interface CardListItem {
-  id: string;
-  projectId: string;
-  title: string;
-  state: CardStateValue;
-  owner: ActorRef | null;
-  priority: number | null;
-  revision: number;
-  updatedAt: string;
-}
-
 export interface CommentRecord {
   id: string;
   cardId: string;
@@ -68,20 +57,53 @@ export interface InboxItem {
   createdAt: string;
 }
 
-export interface CardDetail extends CardListItem {
-  descriptionMd: string;
-  summaryMd: string | null;
-  comments: CommentRecord[];
+interface CardReadBase {
+  id: string;
+  projectId: string;
+  title: string;
+  priority: number | null;
+  revision: number;
+  updatedAt: string;
 }
 
-export type CardDetailWithSummary = Omit<CardDetail, "summaryMd"> & {
-  summaryMd: string;
-};
+interface CardReadNewReady extends CardReadBase {
+  state: typeof CardState.New | typeof CardState.Ready;
+  owner: ActorRef | null;
+  summaryMd: null;
+}
 
-export type ClaimedCardDetail = Omit<CardDetail, "state" | "owner"> & {
+interface CardReadInReview extends CardReadBase {
+  state: typeof CardState.InReview;
+  owner: ActorRef;
+  summaryMd: null;
+}
+
+interface CardReadInProgress extends CardReadBase {
   state: typeof CardState.InProgress;
   owner: ActorRef;
+  summaryMd: null;
+}
+
+interface CardReadDone extends CardReadBase {
+  state: typeof CardState.Done;
+  owner: ActorRef | null;
+  summaryMd: string;
+}
+
+export type CardListItem =
+  | CardReadNewReady
+  | CardReadInReview
+  | CardReadInProgress
+  | CardReadDone;
+
+export type CardDetail = CardListItem & {
+  descriptionMd: string;
+  comments: CommentRecord[];
 };
+
+export type CardDetailWithSummary = Extract<CardDetail, { state: typeof CardState.Done }>;
+
+export type ClaimedCardDetail = Extract<CardDetail, { state: typeof CardState.InProgress }>;
 
 export interface ProjectListItem {
   id: string;

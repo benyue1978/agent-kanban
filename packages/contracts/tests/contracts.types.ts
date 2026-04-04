@@ -69,6 +69,42 @@ const claimResponse = {
   },
 } satisfies ClaimReadyCardResponse;
 
+const validProgressReadCard = {
+  id: "card-1",
+  projectId: "project-1",
+  title: "Example",
+  state: CardState.InProgress,
+  owner: {
+    id: "collaborator-1",
+    kind: "human",
+    displayName: "Song",
+  },
+  priority: 1,
+  revision: 8,
+  updatedAt: "2026-04-04T00:00:00.000Z",
+  descriptionMd: "# Example",
+  summaryMd: null,
+  comments: [],
+} satisfies CardDetail;
+
+const validDoneReadCard = {
+  id: "card-1",
+  projectId: "project-1",
+  title: "Example",
+  state: CardState.Done,
+  owner: {
+    id: "collaborator-1",
+    kind: "human",
+    displayName: "Song",
+  },
+  priority: 1,
+  revision: 8,
+  updatedAt: "2026-04-04T00:00:00.000Z",
+  descriptionMd: "# Example",
+  summaryMd: "Finished",
+  comments: [],
+} satisfies CardDetail;
+
 const invalidClaimAsStateMutation: SetCardStateRequest = {
   cardId: "card-1",
   revision: 7,
@@ -115,14 +151,48 @@ const impossibleClaimResponse = {
   },
 } satisfies ClaimReadyCardResponse;
 
+const impossibleProgressReadCard = {
+  id: "card-1",
+  projectId: "project-1",
+  title: "Example",
+  state: CardState.InProgress,
+  owner: null,
+  priority: 1,
+  revision: 8,
+  updatedAt: "2026-04-04T00:00:00.000Z",
+  descriptionMd: "# Example",
+  summaryMd: null,
+  comments: [],
+  // @ts-expect-error read model must require owner for In Progress.
+} satisfies CardDetail;
+
+const impossibleDoneReadCard = {
+  id: "card-1",
+  projectId: "project-1",
+  title: "Example",
+  state: CardState.Done,
+  owner: null,
+  priority: 1,
+  revision: 8,
+  updatedAt: "2026-04-04T00:00:00.000Z",
+  descriptionMd: "# Example",
+  summaryMd: null,
+  comments: [],
+  // @ts-expect-error read model must require a string summary for Done.
+} satisfies CardDetail;
+
 const inboxStatus = InboxItemStatus.Acknowledged;
 
 void claimRequest;
 void appendSummaryResponse;
 void claimResponse;
+void validProgressReadCard;
+void validDoneReadCard;
 void setCardStateRequest;
 void addCommentRequest;
 void invalidClaimAsStateMutation;
 void impossibleSummaryResponse;
 void impossibleClaimResponse;
+void impossibleProgressReadCard;
+void impossibleDoneReadCard;
 void inboxStatus;
