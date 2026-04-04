@@ -9,7 +9,7 @@ import {
 } from "@agent-kanban/contracts";
 import { getProtectedSections } from "@agent-kanban/card-markdown";
 import { sortReadyCards } from "@agent-kanban/domain";
-import type { Card, Collaborator, PrismaClient } from "@prisma/client";
+import { Prisma, type Card, type Collaborator, type PrismaClient } from "@prisma/client";
 
 interface CreateCardInput {
   descriptionMd: string;
@@ -158,17 +158,29 @@ export class CardRepository {
     return board;
   }
 
-  async getClaimedCard(cardId: string): Promise<ClaimedCardDetail | null> {
+  async findById(cardId: string): Promise<CardDetail | null> {
     const card = await this.prisma.card.findUnique({
       where: { id: cardId },
       include: { owner: true },
     });
 
-    if (card === null) {
-      return null;
-    }
+    return card === null ? null : toCardDetail(card);
+  }
 
-    const mapped = toCardDetail(card);
-    return mapped.state === CardState.InProgress ? (mapped as ClaimedCardDetail) : null;
+  async updateById(cardId: string, data: Prisma.CardUncheckedUpdateInput): Promise<CardDetail> {
+    const card = await this.prisma.card.update({
+      where: { id: cardId },
+      data,
+      include: { owner: true },
+    });
+
+    return toCardDetail(card);
+  }
+
+  async getClaimedCard(cardId: string): Promise<ClaimedCardDetail | null> {
+    const mapped = await this.findById(cardId);
+    return mapped !== null && mapped.state === CardState.InProgress
+      ? (mapped as ClaimedCardDetail)
+      : null;
   }
 }
