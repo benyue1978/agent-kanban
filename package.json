@@ -1,0 +1,16 @@
+{
+  "name": "agent-kanban",
+  "private": true,
+  "packageManager": "pnpm@10.33.0",
+  "scripts": {
+    "check:tooling": "node scripts/check-tooling.mjs",
+    "db:up": "docker compose up -d postgres",
+    "db:down": "docker compose down -v",
+    "test": "pnpm -r test"
+  },
+  "devDependencies": {
+    "tsx": "^4.20.0",
+    "typescript": "^5.9.0",
+    "vitest": "^3.2.0"
+  }
+}
