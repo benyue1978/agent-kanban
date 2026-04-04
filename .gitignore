@@ -12,3 +12,4 @@ coverage/
 **/.prisma/
 **/playwright-report/
 **/test-results/
+apps/*/dist/

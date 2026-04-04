@@ -1,1 +1,0 @@
-{"version":3,"file":"run-cli.d.ts","sourceRoot":"","sources":["../../tests/run-cli.ts"],"names":[],"mappings":"AAIA,MAAM,WAAW,SAAS;IACxB,QAAQ,EAAE,MAAM,CAAC;IACjB,MAAM,EAAE,MAAM,CAAC;IACf,MAAM,EAAE,MAAM,CAAC;CAChB;AAED,wBAAsB,MAAM,CAC1B,IAAI,EAAE,MAAM,EAAE,EACd,GAAG,GAAE,MAAM,CAAC,UAAe,GAC1B,OAAO,CAAC,SAAS,CAAC,CAmCpB"}
