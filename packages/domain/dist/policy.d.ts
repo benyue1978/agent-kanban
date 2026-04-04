@@ -16,6 +16,7 @@ export interface ReadyPickupPolicyContext {
     actorId?: string;
     currentOwnerId?: string | null;
     targetOwnerId?: string | null;
+    humanInstructionGranted?: boolean;
 }
 export declare function assertReviewGateAllowed(context: ReviewGatePolicyContext): void;
 export declare function assertReadyPickupAllowed(context: ReadyPickupPolicyContext): void;

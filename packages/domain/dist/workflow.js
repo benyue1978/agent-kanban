@@ -23,6 +23,9 @@ export function canTransition(input) {
         throwWorkflowError("invalid_transition", `invalid transition from ${input.from} to ${input.to}`, { from: input.from, to: input.to });
     }
     if (input.from === CardState.New && input.to === CardState.Ready) {
+        if (input.titlePresent !== true) {
+            throwWorkflowError("missing_required_section", "a title is required before moving a card to Ready", { from: input.from, to: input.to });
+        }
         if (input.requiredSectionsPresent !== true) {
             throwWorkflowError("missing_required_section", "required sections must be present before moving a card to Ready", { from: input.from, to: input.to });
         }
@@ -39,6 +42,9 @@ export function canTransition(input) {
             actorKind: input.actorKind,
             currentOwnerId,
             targetOwnerId,
+            ...(input.humanInstructionGranted === undefined
+                ? {}
+                : { humanInstructionGranted: input.humanInstructionGranted }),
             ...(input.actorId === undefined ? {} : { actorId: input.actorId }),
         });
         return;
@@ -50,11 +56,11 @@ export function canTransition(input) {
         if (input.ownerId === null || input.ownerId === undefined) {
             throwWorkflowError("missing_owner", "an owner is required to move a card into review", { from: input.from, to: input.to });
         }
-        if (input.executionResultPresent !== true) {
-            throwWorkflowError("missing_required_section", "an execution result is required before moving a card into review", { from: input.from, to: input.to });
-        }
         if (input.actorKind === "agent" && !isSameActor(input.actorId, input.ownerId)) {
             throwWorkflowError("forbidden_action", "only the current owner may move the card into review", { actorId: input.actorId, ownerId: input.ownerId });
+        }
+        if (input.executionResultPresent !== true) {
+            throwWorkflowError("missing_required_section", "an execution result is required before moving a card into review", { from: input.from, to: input.to });
         }
         return;
     }

@@ -46,7 +46,7 @@ export function assertReadyPickupAllowed(context) {
         throw new WorkflowDomainError("forbidden_action", "agents must identify themselves when claiming a ready card", { actorKind: context.actorKind });
     }
     if (currentOwnerId === null) {
-        if (!policy.allowAgentPickUnassignedReady) {
+        if (!policy.allowAgentPickUnassignedReady && context.humanInstructionGranted !== true) {
             throw new WorkflowDomainError("forbidden_action", "agents may not pick unassigned ready cards", { actorKind: context.actorKind });
         }
         if (targetOwnerId !== context.actorId) {

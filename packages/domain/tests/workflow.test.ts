@@ -253,6 +253,20 @@ describe("workflow", () => {
     ).toBe("missing_required_section");
   });
 
+  it("rejects readying a card when the title is missing", () => {
+    expect(
+      getErrorCode(() =>
+        canTransition({
+          from: "New",
+          to: "Ready",
+          actorKind: "human",
+          titlePresent: false,
+          requiredSectionsPresent: true,
+        })
+      )
+    ).toBe("missing_required_section");
+  });
+
   it("rejects agent readying a card without explicit human instruction", () => {
     expect(
       getErrorCode(() =>
@@ -261,6 +275,7 @@ describe("workflow", () => {
           to: "Ready",
           actorKind: "agent",
           actorId: "agent-1",
+          titlePresent: true,
           requiredSectionsPresent: true,
         })
       )
@@ -281,6 +296,21 @@ describe("workflow", () => {
     ).toBe("missing_required_section");
   });
 
+  it("rejects unauthorized review entry before checking execution results", () => {
+    expect(
+      getErrorCode(() =>
+        canTransition({
+          from: "In Progress",
+          to: "In Review",
+          actorKind: "agent",
+          actorId: "agent-1",
+          ownerId: "human-1",
+          executionResultPresent: false,
+        })
+      )
+    ).toBe("forbidden_action");
+  });
+
   it("allows agent readying a card with explicit human instruction", () => {
     expect(() =>
       canTransition({
@@ -288,6 +318,7 @@ describe("workflow", () => {
         to: "Ready",
         actorKind: "agent",
         actorId: "agent-1",
+        titlePresent: true,
         requiredSectionsPresent: true,
         humanInstructionGranted: true,
       })
@@ -307,6 +338,21 @@ describe("workflow", () => {
           ...defaultProjectPolicy,
           allowAgentPickUnassignedReady: true,
         },
+      })
+    ).not.toThrow();
+  });
+
+  it("allows an agent claim under explicit human instruction", () => {
+    expect(() =>
+      canTransition({
+        from: "Ready",
+        to: "In Progress",
+        actorKind: "agent",
+        actorId: "agent-1",
+        ownerId: null,
+        targetOwnerId: "agent-1",
+        humanInstructionGranted: true,
+        policy: defaultProjectPolicy,
       })
     ).not.toThrow();
   });

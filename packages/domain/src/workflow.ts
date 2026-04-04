@@ -12,6 +12,7 @@ export interface WorkflowTransitionInput {
   to: CardStateValue;
   actorKind: "human" | "agent";
   actorId?: string;
+  titlePresent?: boolean;
   ownerId?: string | null;
   targetOwnerId?: string | null;
   policy?: ProjectPolicy;
@@ -61,6 +62,14 @@ export function canTransition(input: WorkflowTransitionInput): void {
   }
 
   if (input.from === CardState.New && input.to === CardState.Ready) {
+    if (input.titlePresent !== true) {
+      throwWorkflowError(
+        "missing_required_section",
+        "a title is required before moving a card to Ready",
+        { from: input.from, to: input.to }
+      );
+    }
+
     if (input.requiredSectionsPresent !== true) {
       throwWorkflowError(
         "missing_required_section",
@@ -89,6 +98,9 @@ export function canTransition(input: WorkflowTransitionInput): void {
       actorKind: input.actorKind,
       currentOwnerId,
       targetOwnerId,
+      ...(input.humanInstructionGranted === undefined
+        ? {}
+        : { humanInstructionGranted: input.humanInstructionGranted }),
       ...(input.actorId === undefined ? {} : { actorId: input.actorId }),
     });
 
@@ -112,19 +124,19 @@ export function canTransition(input: WorkflowTransitionInput): void {
       );
     }
 
-    if (input.executionResultPresent !== true) {
-      throwWorkflowError(
-        "missing_required_section",
-        "an execution result is required before moving a card into review",
-        { from: input.from, to: input.to }
-      );
-    }
-
     if (input.actorKind === "agent" && !isSameActor(input.actorId, input.ownerId)) {
       throwWorkflowError(
         "forbidden_action",
         "only the current owner may move the card into review",
         { actorId: input.actorId, ownerId: input.ownerId }
+      );
+    }
+
+    if (input.executionResultPresent !== true) {
+      throwWorkflowError(
+        "missing_required_section",
+        "an execution result is required before moving a card into review",
+        { from: input.from, to: input.to }
       );
     }
 

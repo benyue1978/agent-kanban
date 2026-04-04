@@ -4,6 +4,7 @@ export interface WorkflowTransitionInput {
     to: CardStateValue;
     actorKind: "human" | "agent";
     actorId?: string;
+    titlePresent?: boolean;
     ownerId?: string | null;
     targetOwnerId?: string | null;
     policy?: ProjectPolicy;

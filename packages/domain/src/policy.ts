@@ -25,6 +25,7 @@ export interface ReadyPickupPolicyContext {
   actorId?: string;
   currentOwnerId?: string | null;
   targetOwnerId?: string | null;
+  humanInstructionGranted?: boolean;
 }
 
 function resolvePolicy(policy?: ProjectPolicy): ProjectPolicy {
@@ -95,7 +96,7 @@ export function assertReadyPickupAllowed(context: ReadyPickupPolicyContext): voi
   }
 
   if (currentOwnerId === null) {
-    if (!policy.allowAgentPickUnassignedReady) {
+    if (!policy.allowAgentPickUnassignedReady && context.humanInstructionGranted !== true) {
       throw new WorkflowDomainError(
         "forbidden_action",
         "agents may not pick unassigned ready cards",
