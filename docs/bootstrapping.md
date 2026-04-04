@@ -65,6 +65,15 @@ From this point on:
 
 The repo still remains the source of truth for code and artifacts, but the Kanban system becomes the source of truth for task process and planning.
 
+## Post-Backfill Document Policy
+
+After draft cards have been backfilled into the running system:
+
+- bootstrap planning files in the repo should no longer be treated as the active task tracker
+- those files may remain as seed history or reference material
+- active task planning, task state, and task progression should happen in the Kanban system
+- if bootstrap card drafts are retained, they should be clearly marked as historical or backfilled
+
 ## Important distinction
 
 ### Before MVP exists
@@ -88,6 +97,8 @@ Bootstrapping is successful when all of the following are true:
 - humans can inspect and review it through the web UI
 - initial draft cards have been backfilled into the system
 - new work is planned through the system itself
+- at least one repo seed card has been converted into a real system card through agent action
+- at least one card has completed a full lifecycle through the running system
 
 ## Practical workflow
 

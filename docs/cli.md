@@ -10,55 +10,46 @@ Agents interact with the system through CLI commands, not direct database or UI 
 
 - CLI should be simple and predictable
 - CLI should expose core operations only
-- Markdown should be the main editing interface
+- Markdown should remain the main flexible editing interface
+- Critical operations should also have structured commands
 
 ## Commands
 
 ### List cards
 
-```
-kanban list
-kanban list --assigned-to me
-kanban list --state Ready
-```
+`kanban list`
+`kanban list --assigned-to me`
+`kanban list --state Ready`
 
 ### Show card
 
-```
-kanban show --id <card_id>
-```
+`kanban show --id <card_id>`
 
 ### Create card
 
-```
-kanban create --title "..."
-```
+`kanban create --title "..."`
 
-### Update card markdown
+### Full markdown update
 
-```
-kanban show --id 123 > card.md
-# edit card.md
-kanban update-card --id 123 --file card.md
-```
+`kanban show --id 123 > card.md`
+edit card.md
+`kanban update-card --id 123 --file card.md --revision <known_revision>`
 
-### Update state
+### Structured state update
 
-```
-kanban update-state --id 123 --to "In Progress"
-```
+`kanban set-state --id 123 --to "In Progress"`
 
-### Assign owner
+### Structured owner assignment
 
-```
-kanban assign --id 123 --to <collaborator>
-```
+`kanban assign-owner --id 123 --to <collaborator>`
+
+### Structured summary update
+
+`kanban append-summary --id 123 --file summary.md`
 
 ### Add comment
 
-```
-kanban comment --id 123 --body "..."
-```
+`kanban comment --id 123 --body "..." --kind progress`
 
 ## Behavior
 
@@ -74,11 +65,19 @@ Typical flow:
 2. pick task
 3. show card
 4. execute work in repo
-5. update card
+5. update card through either full markdown update or structured commands
 6. add comments
 7. move state
+
+## Recommended Usage
+
+For agent workflows:
+
+- prefer structured commands for state, ownership, summary, and comments
+- use full markdown roundtrip when editing planning content or larger descriptive sections
 
 ## Non-goals
 
 - CLI is not a full workflow engine
-- CLI does not enforce heavy logic
+- CLI does not enforce heavy logic by itself
+- CLI does not bypass backend workflow validation

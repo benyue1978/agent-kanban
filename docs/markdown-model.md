@@ -41,11 +41,9 @@ This is optimistic locking.
 
 ### 1. Full Markdown Roundtrip
 
-```
-kanban show --id 123 > card.md
-# edit
-kanban update-card --id 123 --file card.md
-```
+`kanban show --id 123 > card.md`
+edit the file locally
+`kanban update-card --id 123 --file card.md --revision <known_revision>`
 
 Use when:
 
@@ -58,27 +56,54 @@ These commands update specific parts of the card safely.
 
 #### set-state
 
-```
-kanban set-state --id 123 --to "In Progress"
-```
+`kanban set-state --id 123 --to "In Progress"`
 
 #### assign-owner
 
-```
-kanban assign-owner --id 123 --to agent-coder
-```
+`kanban assign-owner --id 123 --to agent-coder`
 
 #### append-summary
 
-```
-kanban append-summary --id 123 --file summary.md
-```
+`kanban append-summary --id 123 --file summary.md`
 
 #### add-comment
 
-```
-kanban comment --id 123 --body "..." --kind progress
-```
+`kanban comment --id 123 --body "..." --kind progress`
+
+## Section Contract
+
+V1 should not attempt to support arbitrary markdown structure for protected card sections.
+
+The section contract is intentionally limited.
+
+### Allowed flexibility
+
+- card title can vary
+- free text inside sections is allowed
+- additional non-protected sections may exist
+
+### Protected section headings
+
+The backend and agents should treat the following headings as stable anchors:
+
+- `## Goal`
+- `## Context`
+- `## Scope`
+- `## Definition of Done`
+- `## Constraints`
+- `## Plan`
+- `## Final Summary`
+
+Within `## Final Summary`, the following subheadings should also be treated as stable when present:
+
+- `### What was done`
+- `### Key Decisions`
+- `### Result / Links`
+- `### DoD Check`
+
+Agents should not rename protected headings.
+
+Protected headings are how the backend finds and protects important sections.
 
 ## Summary Protection
 
@@ -86,16 +111,20 @@ Final Summary should be treated as a protected section.
 
 Rules:
 
-- append or update through explicit commands
+- append or update through explicit commands for agent workflows
 - avoid accidental overwrite by full markdown update
+- backend should reject full update attempts that corrupt or remove protected summary structure unexpectedly
 
 ## Suggested Backend Behavior
 
-- parse markdown into logical sections
-- protect Final Summary unless explicitly modified
-- merge changes where possible
+The backend should not try to become a general markdown merge engine.
 
-V1 can implement this minimally, but the direction should be clear.
+V1 should do the following instead:
+
+- recognize protected headings by stable heading anchors
+- apply optimistic locking to full updates
+- prefer structured commands for critical sections
+- reject unsafe writes rather than attempting clever automatic merges
 
 ## Recommended Strategy
 
@@ -115,5 +144,6 @@ This keeps:
 
 - no CRDT or real-time collaborative editing in V1
 - no complex diff/merge engine
+- no attempt to parse arbitrary markdown into a rich document model
 
 Keep the model simple but safe.

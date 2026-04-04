@@ -29,6 +29,7 @@ A project is one Kanban.
 
 - One project is bound to one repository
 - V1 assumes one primary repo per project
+- `repo_path` is acceptable for V1 local execution, but should be treated as an implementation-facing binding rather than a permanent identity model for future distributed execution
 
 ## Card
 
@@ -78,10 +79,12 @@ It should provide enough context for a collaborator, especially an agent, to car
 
 ## Collaborator
 
-A collaborator can be:
+There are only two collaborator types in V1:
 
 - human
 - agent
+
+The system does not introduce additional first-class actor roles such as reviewer. Review is modeled as an allowed action under workflow and project policy.
 
 ### Properties
 
@@ -100,16 +103,20 @@ Comments belong to a card.
 - card_id
 - author_id
 - body
+- kind
 - mentions
 - created_at
 
 ### Semantics
 
-Comments are a mix of:
+Comments are timeline entries with lightweight semantic types.
 
-- progress log
-- lightweight conversation
-- mention-driven coordination
+They support:
+
+- progress logging
+- lightweight coordination
+- mention-driven inbox
+- decision recording
 
 V1 does not require threaded nested comments.
 
@@ -126,12 +133,26 @@ All important actions should be recorded as events.
 - comment_added
 - priority_changed
 - card_archived
+- summary_updated
 
 ### Purpose
 
 - auditability
 - timeline reconstruction
 - process visibility
+
+### Event granularity
+
+V1 event log is for audit and timeline purposes, not full event-sourced state reconstruction.
+
+For markdown-related actions, record:
+
+- operation type
+- actor
+- card id
+- revision before / after when relevant
+
+Do not require full markdown diff storage in V1.
 
 ## Inbox
 

@@ -12,7 +12,6 @@ Card description is markdown with a recommended structure.
 
 ### Template
 
-```
 # Title
 
 ## Goal
@@ -22,6 +21,7 @@ Card description is markdown with a recommended structure.
 ## Scope
 
 ## Definition of Done
+
 - [ ] item
 
 ## Constraints
@@ -31,6 +31,7 @@ Card description is markdown with a recommended structure.
 ---
 
 ## Final Summary (only when Done)
+
 ### What was done
 
 ### Key Decisions
@@ -38,20 +39,22 @@ Card description is markdown with a recommended structure.
 ### Result / Links
 
 ### DoD Check
+
 - [x] item
-```
 
 ## Rules
 
-- The upper sections are used for planning and may drift
+- the upper sections are used for planning and may drift
 - Final Summary is the authoritative summary
 - Final Summary must be filled before Done
+- protected section headings should remain stable so that backend and agents can safely identify them
 
 ## Editing Model
 
 - Agents and humans can update markdown
 - Markdown is treated as the primary editable content
-- Updates are versioned via event log
+- Full markdown update should use revision checking
+- Critical fields should also have structured command paths
 
 ## Semantics
 
@@ -68,11 +71,11 @@ These guide execution.
 
 ### Execution Layer
 
-- Comments record actions and progress
+- Comments record actions, questions, and decisions through the workflow
 
 ### Summary Layer
 
-- Final Summary captures outcome
+- Final Summary captures the stable outcome
 
 ## DoD Usage
 
@@ -93,3 +96,4 @@ Definition of Done should:
 - Storing full design documents in card
 - Using comments as final result
 - Overwriting Goal/DoD after execution without human intent
+- Renaming protected section headings in ways that break safe updates

@@ -18,6 +18,17 @@ Cards move through the following states:
 
 V1 does not include a Blocked state.
 
+## Actor Model
+
+The only real actor types in this system are:
+
+- human
+- agent
+
+The system does not model a separate `reviewer` role as a first-class domain concept.
+
+A review gate is still required, but it is expressed as an allowed action performed by a human or an agent under project policy.
+
 ## Owner Definition
 
 A card has exactly one `owner` at a time.
@@ -34,6 +45,21 @@ The `owner` does **not** mean:
 - a full list of every actor that touched the card
 
 Subagents are execution details and should not be represented as first-class owners in V1.
+
+## Review Gate
+
+In Review is a real gate, not a visual placeholder.
+
+A card should not move to Done merely because execution appears complete.
+
+The gate is passed by an allowed action from either:
+
+- a human
+- an agent
+
+Whether a given human or agent is allowed to pass the gate is controlled by project policy and backend rules, not by a dedicated card field.
+
+By default, owner and gate-passer should be treated as different actors unless a project explicitly allows self-review.
 
 ## Transition Table
 
@@ -113,12 +139,12 @@ Meaning:
 Required conditions:
 
 - Final Summary exists
-- review gate is explicitly passed
+- review gate is explicitly passed by an allowed human or agent action
 
 Who can trigger:
 
-- human reviewer
-- reviewer agent if the project configuration allows agent review
+- human allowed by project policy
+- agent allowed by project policy
 
 Required side effects:
 
@@ -137,8 +163,8 @@ Required conditions:
 
 Who can trigger:
 
-- human reviewer
-- reviewer agent if project configuration allows it
+- human allowed by project policy
+- agent allowed by project policy
 
 Required side effects:
 
@@ -159,6 +185,31 @@ Required behavior:
 
 - add rationale comment or event
 - keep prior Final Summary as historical context, then update later if needed
+
+## Explicitly Invalid Transitions
+
+The backend should reject transitions such as:
+
+- New → In Progress without first becoming Ready
+- Ready → Done
+- New → Done
+- In Review without owner
+- In Review → Done without Final Summary
+
+## Error Contract
+
+The API should return machine-usable workflow errors.
+
+Suggested stable error types:
+
+- `invalid_transition`
+- `missing_owner`
+- `missing_required_section`
+- `review_gate_not_passed`
+- `summary_required`
+- `forbidden_action`
+
+CLI and agent skills should be able to react to these errors predictably.
 
 ## Archive Rules
 
@@ -185,10 +236,12 @@ V1 does not include a workflow engine, but it does need minimal execution discip
 - agents should prefer assigned cards first
 - if agents are allowed to pick unassigned cards, they should only pick from Ready cards
 
-## Review Gate
+### Default selection policy
 
-In Review is a real gate, not a visual placeholder.
+When multiple cards are eligible, the default order should be:
 
-A card should not move to Done merely because execution appears complete.
+1. higher priority first
+2. then older Ready cards first
+3. then older updated-at timestamps to reduce starvation
 
-Someone or something configured as reviewer must pass the gate.
+This is a default policy, not a workflow engine.

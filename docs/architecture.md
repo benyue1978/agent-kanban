@@ -37,6 +37,8 @@ Responsibilities:
 - manage comments
 - manage state transitions
 - record events
+- enforce workflow validation
+- enforce revision checks for markdown updates
 
 Tech:
 
@@ -52,6 +54,8 @@ Responsibilities:
 - fetch card details
 - update markdown
 - update state
+- assign owner
+- append summary
 - add comments
 
 CLI should interact via HTTP API.
@@ -74,35 +78,45 @@ UI is read-heavy, with limited write actions for humans.
 3. API returns card data
 4. Agent executes work in repo
 5. Agent updates card via CLI
-6. API records updates and events
+6. API validates updates, records events, and persists state
 7. UI reflects state
 
 ## Key Design Choices
 
-### Repo vs Kanban
+### Source-of-truth separation
 
-- Repo contains final truth
-- Kanban contains process
+- repo is authoritative for code and artifacts
+- kanban is authoritative for task process and progress
+- pre-MVP planning may live in repo docs, but active planning should move into the system after bootstrapping
 
-### Markdown Roundtrip
+### Markdown plus structured commands
 
 - Card description is edited as markdown
-- CLI supports fetch and update of markdown
+- CLI supports fetch and full update of markdown
+- CLI also supports structured updates for critical operations such as state, ownership, summary, and comments
+
+### Concurrency safety
+
+- full markdown updates require optimistic locking through revision or timestamp checks
+- backend should reject unsafe overwrites instead of trying to do complex merges in V1
 
 ### Event Log
 
-- All changes recorded
+- all important changes are recorded
+- event log is for audit and timeline, not full event-sourced reconstruction in V1
 
 ### No Workflow Engine
 
-- No complex orchestration
-- Agents pull work
+- no complex orchestration
+- agents pull work
+- backend still enforces transition rules and policy checks
 
 ## Non-goals
 
-- No scheduling engine
-- No distributed workflow system
-- No tight coupling with GitHub PR model
+- no scheduling engine
+- no distributed workflow system
+- no tight coupling with GitHub PR model
+- no real-time collaborative markdown editing
 
 ## Future Extensions (not in MVP)
 
@@ -110,3 +124,4 @@ UI is read-heavy, with limited write actions for humans.
 - DoD validation
 - summary generation automation
 - Git integration enhancements
+- richer execution runtime bindings beyond local `repo_path`

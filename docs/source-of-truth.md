@@ -46,7 +46,7 @@ Before the system exists:
 
 After MVP:
 
-- planning moves into the Kanban system
+- active planning moves into the Kanban system
 
 Repo planning docs become reference material rather than the active task system.
 
@@ -61,6 +61,19 @@ Repo planning docs become reference material rather than the active task system.
 
 - planning sections in card may drift
 - Final Summary is authoritative for the result
+
+## Post-Backfill Policy
+
+Once draft planning cards have been backfilled into the system:
+
+- repo planning docs used for bootstrap should no longer be treated as active task-management documents
+- active task state should live in the Kanban system
+- bootstrap seed docs may remain in the repo as historical or reference material
+- if retained, they should be clearly marked as backfilled or historical
+
+Product docs, architecture docs, and long-lived reference docs should remain in the repo.
+
+Task progress and active planning should move into the running system.
 
 ## Why this matters
 

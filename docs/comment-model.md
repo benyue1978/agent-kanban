@@ -55,6 +55,31 @@ Suggested statuses:
 
 These statuses can be implemented as a view-level or derived mechanism in V1 rather than a fully separate workflow object.
 
+## Decision vs Final Summary
+
+A `decision` comment is a timeline record.
+
+It captures:
+
+- a design choice
+- a review conclusion
+- a direction change
+- an important local decision during execution
+
+However, a decision comment is **not** the final stable summary of a card.
+
+Final Summary remains the authoritative completion-layer summary.
+
+Before a card moves to Done:
+
+- key decisions that affect result understanding should be reflected in Final Summary
+- readers should not need to reconstruct the final outcome only by reading the full comment timeline
+
+In short:
+
+- comment timeline keeps history
+- Final Summary keeps the stable end-state summary
+
 ## Why this matters
 
 Without kind metadata:
@@ -62,6 +87,11 @@ Without kind metadata:
 - agents cannot reliably separate progress from questions
 - inbox becomes a noisy stream of undifferentiated comments
 - human review becomes harder as card volume grows
+
+Without a clear boundary between decision comments and Final Summary:
+
+- important decisions stay buried in the timeline
+- or Final Summary becomes a low-value copy of scattered comments
 
 ## V1 Constraints
 
@@ -85,7 +115,7 @@ Use for:
 
 - asking human to decide
 - asking for missing requirements
-- asking reviewer for clarification
+- asking for clarification from another collaborator
 
 ### decision
 
