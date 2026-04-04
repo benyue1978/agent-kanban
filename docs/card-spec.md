@@ -12,6 +12,7 @@ Card description is markdown with a recommended structure.
 
 ### Template
 
+```
 # Title
 
 ## Goal
@@ -41,6 +42,7 @@ Card description is markdown with a recommended structure.
 ### DoD Check
 
 - [x] item
+```
 
 ## Rules
 
