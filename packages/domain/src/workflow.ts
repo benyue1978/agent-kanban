@@ -71,10 +71,27 @@ export function canTransition(input: WorkflowTransitionInput): void {
 
   if (input.from === CardState.Ready && input.to === CardState.InProgress) {
     const currentOwnerId = input.ownerId ?? null;
-    const targetOwnerId = input.targetOwnerId ?? currentOwnerId;
+    const targetOwnerId =
+      input.targetOwnerId ?? currentOwnerId ?? (input.actorKind === "agent" ? input.actorId ?? null : null);
 
-    if (currentOwnerId === null && targetOwnerId === null) {
-      if (input.actorKind === "agent") {
+    if (targetOwnerId === null) {
+      throwWorkflowError(
+        "missing_owner",
+        "an owner is required to move a ready card into progress",
+        { from: input.from, to: input.to }
+      );
+    }
+
+    if (input.actorKind === "agent") {
+      if (input.actorId === undefined) {
+        throwWorkflowError(
+          "forbidden_action",
+          "agents must identify themselves when claiming a ready card",
+          { from: input.from, to: input.to }
+        );
+      }
+
+      if (currentOwnerId === null) {
         if (!policy.allowAgentPickUnassignedReady) {
           throwWorkflowError(
             "forbidden_action",
@@ -82,19 +99,26 @@ export function canTransition(input: WorkflowTransitionInput): void {
             { from: input.from, to: input.to }
           );
         }
-
-        if (input.actorId === undefined) {
-          throwWorkflowError(
-            "missing_owner",
-            "an owner is required to move a ready card into progress",
-            { from: input.from, to: input.to }
-          );
-        }
-      } else {
+      } else if (input.actorId !== currentOwnerId) {
         throwWorkflowError(
-          "missing_owner",
-          "an owner is required to move a ready card into progress",
-          { from: input.from, to: input.to }
+          "forbidden_action",
+          "agents may not start a card already assigned to another owner",
+          {
+            actorId: input.actorId,
+            currentOwnerId,
+            targetOwnerId,
+          }
+        );
+      }
+
+      if (targetOwnerId !== input.actorId) {
+        throwWorkflowError(
+          "forbidden_action",
+          "agent claims must resolve to the agent as the target owner",
+          {
+            actorId: input.actorId,
+            targetOwnerId,
+          }
         );
       }
     }
@@ -111,18 +135,18 @@ export function canTransition(input: WorkflowTransitionInput): void {
   }
 
   if (input.from === CardState.InProgress && input.to === CardState.InReview) {
-    if (input.ownerId === null || input.ownerId === undefined) {
+    if (input.actorId === undefined) {
       throwWorkflowError(
-        "missing_owner",
-        "an owner is required to move a card into review",
+        "forbidden_action",
+        "review transitions require reviewer identity",
         { from: input.from, to: input.to }
       );
     }
 
-    if (input.actorId === undefined) {
+    if (input.ownerId === null || input.ownerId === undefined) {
       throwWorkflowError(
         "missing_owner",
-        "review transitions require reviewer identity",
+        "an owner is required to move a card into review",
         { from: input.from, to: input.to }
       );
     }
@@ -139,18 +163,35 @@ export function canTransition(input: WorkflowTransitionInput): void {
   }
 
   if (input.from === CardState.InReview && input.to === CardState.InProgress) {
-    if (input.ownerId === null || input.ownerId === undefined) {
+    if (input.actorId === undefined) {
       throwWorkflowError(
-        "missing_owner",
-        "a card in review must have an owner before it can be reopened",
+        "forbidden_action",
+        "review transitions require reviewer identity",
         { from: input.from, to: input.to }
       );
     }
 
-    if (input.actorId === undefined) {
+    if (input.actorKind === "agent" && !policy.allowAgentReview) {
+      throwWorkflowError(
+        "forbidden_action",
+        "agents are not allowed to reopen cards from review",
+        { from: input.from, to: input.to }
+      );
+    }
+
+    if (input.actorId !== undefined && input.ownerId !== undefined && input.ownerId !== null) {
+      assertReviewGateAllowed({
+        policy,
+        actorKind: input.actorKind,
+        ownerId: input.ownerId,
+        actorId: input.actorId,
+      });
+    }
+
+    if (input.ownerId === null || input.ownerId === undefined) {
       throwWorkflowError(
         "missing_owner",
-        "review transitions require reviewer identity",
+        "a card in review must have an owner before it can be reopened",
         { from: input.from, to: input.to }
       );
     }
@@ -163,29 +204,39 @@ export function canTransition(input: WorkflowTransitionInput): void {
       );
     }
 
-    assertReviewGateAllowed({
-      policy,
-      actorKind: input.actorKind,
-      ownerId: input.ownerId,
-      ...(input.actorId === undefined ? {} : { actorId: input.actorId }),
-    });
-
     return;
   }
 
   if (input.from === CardState.InReview && input.to === CardState.Done) {
-    if (input.ownerId === null || input.ownerId === undefined) {
+    if (input.actorId === undefined) {
       throwWorkflowError(
-        "missing_owner",
-        "a card in review must have an owner before it can be completed",
+        "forbidden_action",
+        "review transitions require reviewer identity",
         { from: input.from, to: input.to }
       );
     }
 
-    if (input.actorId === undefined) {
+    if (input.actorKind === "agent" && !policy.allowAgentReview) {
+      throwWorkflowError(
+        "forbidden_action",
+        "agents are not allowed to complete review",
+        { from: input.from, to: input.to }
+      );
+    }
+
+    if (input.ownerId !== undefined && input.ownerId !== null) {
+      assertReviewGateAllowed({
+        policy,
+        actorKind: input.actorKind,
+        ownerId: input.ownerId,
+        actorId: input.actorId,
+      });
+    }
+
+    if (input.ownerId === null || input.ownerId === undefined) {
       throwWorkflowError(
         "missing_owner",
-        "review transitions require reviewer identity",
+        "a card in review must have an owner before it can be completed",
         { from: input.from, to: input.to }
       );
     }
@@ -205,12 +256,5 @@ export function canTransition(input: WorkflowTransitionInput): void {
         { from: input.from, to: input.to }
       );
     }
-
-    assertReviewGateAllowed({
-      policy,
-      actorKind: input.actorKind,
-      ownerId: input.ownerId,
-      ...(input.actorId === undefined ? {} : { actorId: input.actorId }),
-    });
   }
 }
