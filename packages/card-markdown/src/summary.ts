@@ -1,4 +1,4 @@
-import { getProtectedSections } from "./anchors.js";
+import { findProtectedSection, getProtectedSections } from "./anchors.js";
 
 export class SummaryValidationError extends Error {
   readonly code = "summary_required";
@@ -9,32 +9,27 @@ export class SummaryValidationError extends Error {
   }
 }
 
+export class SummaryAppendError extends Error {
+  readonly code = "invalid_summary_append";
+
+  constructor(message: string) {
+    super(message);
+    this.name = "SummaryAppendError";
+  }
+}
+
 function normalizeBlock(markdown: string): string {
   return markdown.trim().replace(/\n{3,}/g, "\n\n");
 }
 
-function getSubsectionContent(section: string, heading: string): string | undefined {
-  const pattern = new RegExp(
-    `^### ${heading.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\s*$\\n?([\\s\\S]*?)(?=^###\\s+|$)`,
-    "m"
-  );
-  const match = pattern.exec(section);
-  const content = match?.[1]?.trim();
-
-  return content && content.length > 0 ? content : undefined;
-}
-
 export function validateCompletionSummary(markdown: string): void {
-  const finalSummary = getProtectedSections(markdown).finalSummary;
+  const sections = getProtectedSections(markdown);
 
-  if (finalSummary === undefined) {
+  if (sections.finalSummary === undefined) {
     throw new SummaryValidationError("summary_required: final summary is required before completion");
   }
 
-  const whatWasDone = getSubsectionContent(finalSummary, "What was done");
-  const dodCheck = getSubsectionContent(finalSummary, "DoD Check");
-
-  if (whatWasDone === undefined || dodCheck === undefined) {
+  if (sections.finalSummaryWhatWasDone === undefined || sections.finalSummaryDodCheck === undefined) {
     throw new SummaryValidationError(
       "summary_required: final summary must include 'What was done' and 'DoD Check'"
     );
@@ -44,17 +39,32 @@ export function validateCompletionSummary(markdown: string): void {
 export function appendCompletionSummary(markdown: string, summaryMarkdown: string): string {
   const trimmedMarkdown = markdown.trimEnd();
   const normalizedSummary = normalizeBlock(summaryMarkdown);
-  const finalSummary = getProtectedSections(markdown).finalSummary;
 
-  if (finalSummary === undefined) {
+  if (/^##\s+Final Summary\s*$/m.test(normalizedSummary)) {
+    throw new SummaryAppendError(
+      "invalid_summary_append: append payload must not include the '## Final Summary' heading"
+    );
+  }
+
+  const finalSummaryBlock = findProtectedSection(markdown, "Final Summary");
+
+  if (finalSummaryBlock === undefined) {
     const separator = trimmedMarkdown.length === 0 ? "" : "\n\n";
     return `${trimmedMarkdown}${separator}## Final Summary\n${normalizedSummary}\n`;
   }
 
-  const finalSummaryPattern = /^## Final Summary\s*$\n?[\s\S]*?(?=^##\s+|$)/m;
+  const existingContent = finalSummaryBlock.content;
+  const nextContent =
+    existingContent.length === 0 ? normalizedSummary : `${existingContent}\n\n${normalizedSummary}`;
+  const prefix = markdown.slice(0, finalSummaryBlock.bodyStart);
+  const suffix = markdown.slice(finalSummaryBlock.end).replace(/^\n+/, "");
+  const suffixPrefix = suffix.length === 0 ? "\n" : "\n\n";
+  const contentPrefix = prefix.endsWith("\n") ? "" : "\n";
 
-  return trimmedMarkdown.replace(finalSummaryPattern, (existingSection) => {
-    const existingTrimmed = existingSection.trimEnd();
-    return `${existingTrimmed}\n\n${normalizedSummary}`;
-  }) + "\n";
+  return (
+    `${prefix}${contentPrefix}${nextContent}${suffixPrefix}${suffix}`.replace(
+      /\n{3,}/g,
+      "\n\n"
+    )
+  );
 }

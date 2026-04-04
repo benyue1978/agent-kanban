@@ -6,9 +6,20 @@ export interface ProtectedSections {
   constraints?: string;
   plan?: string;
   finalSummary?: string;
+  finalSummaryWhatWasDone?: string;
+  finalSummaryKeyDecisions?: string;
+  finalSummaryResultLinks?: string;
+  finalSummaryDodCheck?: string;
 }
 
-const sectionHeadings = [
+interface HeadingBlock {
+  bodyStart: number;
+  content: string;
+  end: number;
+  start: number;
+}
+
+const topLevelSectionHeadings = [
   ["goal", "Goal"],
   ["context", "Context"],
   ["scope", "Scope"],
@@ -18,29 +29,79 @@ const sectionHeadings = [
   ["finalSummary", "Final Summary"],
 ] as const satisfies ReadonlyArray<readonly [keyof ProtectedSections, string]>;
 
-function escapeRegex(value: string): string {
-  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+const finalSummaryHeadings = [
+  ["finalSummaryWhatWasDone", "What was done"],
+  ["finalSummaryKeyDecisions", "Key Decisions"],
+  ["finalSummaryResultLinks", "Result / Links"],
+  ["finalSummaryDodCheck", "DoD Check"],
+] as const satisfies ReadonlyArray<readonly [keyof ProtectedSections, string]>;
+
+function getHeadingLineEnd(markdown: string, start: number, headingLength: number): number {
+  const afterHeading = start + headingLength;
+
+  if (markdown.slice(afterHeading, afterHeading + 2) === "\r\n") {
+    return afterHeading + 2;
+  }
+
+  if (markdown[afterHeading] === "\n") {
+    return afterHeading + 1;
+  }
+
+  return afterHeading;
 }
 
-function getSectionContent(markdown: string, heading: string): string | undefined {
-  const pattern = new RegExp(
-    `^## ${escapeRegex(heading)}\\s*$\\n?([\\s\\S]*?)(?=^##\\s+|$)`,
-    "m"
-  );
-  const match = pattern.exec(markdown);
-  const content = match?.[1]?.trim();
+function findHeadingBlock(markdown: string, level: 2 | 3, heading: string): HeadingBlock | undefined {
+  const headingPattern = level === 2 ? /^##\s+(.+?)\s*$/gm : /^###\s+(.+?)\s*$/gm;
+  const matches = [...markdown.matchAll(headingPattern)];
+  const index = matches.findIndex((match) => match[1]?.trim() === heading);
 
-  return content && content.length > 0 ? content : undefined;
+  if (index === -1) {
+    return undefined;
+  }
+
+  const current = matches.at(index);
+
+  if (current === undefined || current.index === undefined) {
+    return undefined;
+  }
+
+  const bodyStart = getHeadingLineEnd(markdown, current.index, current[0].length);
+  const nextStart = matches[index + 1]?.index ?? markdown.length;
+
+  return {
+    start: current.index,
+    bodyStart,
+    end: nextStart,
+    content: markdown.slice(bodyStart, nextStart).trim(),
+  };
+}
+
+export function findProtectedSection(markdown: string, heading: string): HeadingBlock | undefined {
+  return findHeadingBlock(markdown, 2, heading);
 }
 
 export function getProtectedSections(markdown: string): ProtectedSections {
   const sections: ProtectedSections = {};
 
-  for (const [key, heading] of sectionHeadings) {
-    const content = getSectionContent(markdown, heading);
+  for (const [key, heading] of topLevelSectionHeadings) {
+    const block = findHeadingBlock(markdown, 2, heading);
 
-    if (content !== undefined) {
-      sections[key] = content;
+    if (block !== undefined) {
+      sections[key] = block.content;
+    }
+  }
+
+  const finalSummary = sections.finalSummary;
+
+  if (finalSummary === undefined) {
+    return sections;
+  }
+
+  for (const [key, heading] of finalSummaryHeadings) {
+    const block = findHeadingBlock(finalSummary, 3, heading);
+
+    if (block !== undefined) {
+      sections[key] = block.content;
     }
   }
 
