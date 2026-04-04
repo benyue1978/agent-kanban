@@ -18,7 +18,6 @@ import type {
   CardListItem,
   ClaimReadyCardRequest,
   ClaimReadyCardResponse,
-  CardDetailWithSummary,
   CreateCardRequest,
   CreateCardResponse,
   ListCardsRequest,
@@ -182,8 +181,9 @@ describe("contracts", () => {
     const appendCardSummaryResponse: AppendCardSummaryResponse = {
       card: {
         ...showCardResponse.card,
+        state: CardState.InReview,
         summaryMd: "Done",
-      } satisfies CardDetailWithSummary,
+      },
     };
     const addCommentRequest: AddCommentRequest = {
       cardId: "card-1",
@@ -217,12 +217,28 @@ describe("contracts", () => {
       ],
     };
     const boardResponse: BoardResponse = {
-      columns: [
-        {
+      columns: {
+        [CardState.New]: {
           state: CardState.New,
           cards: [showCardResponse.card],
         },
-      ],
+        [CardState.Ready]: {
+          state: CardState.Ready,
+          cards: [],
+        },
+        [CardState.InProgress]: {
+          state: CardState.InProgress,
+          cards: [],
+        },
+        [CardState.InReview]: {
+          state: CardState.InReview,
+          cards: [],
+        },
+        [CardState.Done]: {
+          state: CardState.Done,
+          cards: [],
+        },
+      },
     };
     const projectListResponse: ProjectListResponse = {
       projects: [
@@ -255,11 +271,12 @@ describe("contracts", () => {
     expect(assignCardOwnerResponse.card.owner).toBeNull();
     expect(appendCardSummaryRequest.summaryMd).toBe("Done");
     expect(appendCardSummaryResponse.card.summaryMd).toBe("Done");
+    expect(appendCardSummaryResponse.card.state).toBe(CardState.InReview);
     expect(addCommentRequest.kind).toBe(CommentKind.Progress);
     expect(addCommentResponse.comment.body).toBe("Working on it");
     expect(listInboxRequest.status).toBe(InboxItemStatus.Open);
     expect(listInboxResponse.items).toHaveLength(1);
-    expect(boardResponse.columns[0]?.cards).toHaveLength(1);
+    expect(boardResponse.columns[CardState.New].cards).toHaveLength(1);
     expect(projectListResponse.projects[0]?.countsByState[CardState.New]).toBe(1);
 
     expectTypeOf(listCardsResponse).toMatchTypeOf<ListCardsResponse>();

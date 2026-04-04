@@ -66,8 +66,14 @@ interface CardReadBase {
   updatedAt: string;
 }
 
-interface CardReadNewReady extends CardReadBase {
-  state: typeof CardState.New | typeof CardState.Ready;
+interface CardReadNew extends CardReadBase {
+  state: typeof CardState.New;
+  owner: ActorRef | null;
+  summaryMd: null;
+}
+
+interface CardReadReady extends CardReadBase {
+  state: typeof CardState.Ready;
   owner: ActorRef | null;
   summaryMd: null;
 }
@@ -76,6 +82,12 @@ interface CardReadInReview extends CardReadBase {
   state: typeof CardState.InReview;
   owner: ActorRef;
   summaryMd: null;
+}
+
+interface CardReadInReviewWithSummary extends CardReadBase {
+  state: typeof CardState.InReview;
+  owner: ActorRef;
+  summaryMd: string;
 }
 
 interface CardReadInProgress extends CardReadBase {
@@ -91,8 +103,10 @@ interface CardReadDone extends CardReadBase {
 }
 
 export type CardListItem =
-  | CardReadNewReady
+  | CardReadNew
+  | CardReadReady
   | CardReadInReview
+  | CardReadInReviewWithSummary
   | CardReadInProgress
   | CardReadDone;
 
@@ -101,7 +115,9 @@ export type CardDetail = CardListItem & {
   comments: CommentRecord[];
 };
 
-export type CardDetailWithSummary = Extract<CardDetail, { state: typeof CardState.Done }>;
+export type SummaryPresentCard =
+  | Extract<CardDetail, { state: typeof CardState.InReview; summaryMd: string }>
+  | Extract<CardDetail, { state: typeof CardState.Done }>;
 
 export type ClaimedCardDetail = Extract<CardDetail, { state: typeof CardState.InProgress }>;
 
@@ -120,13 +136,17 @@ export interface ProjectDetail {
   policy: ProjectPolicy;
 }
 
-export interface BoardColumn {
-  state: CardStateValue;
-  cards: CardListItem[];
+export interface BoardColumn<S extends CardStateValue = CardStateValue> {
+  state: S;
+  cards: Extract<CardListItem, { state: S }>[];
 }
 
+export type BoardColumns = {
+  [S in CardStateValue]: BoardColumn<S>;
+};
+
 export interface BoardResponse {
-  columns: BoardColumn[];
+  columns: BoardColumns;
 }
 
 export interface ProjectListResponse {
@@ -210,7 +230,7 @@ export interface AppendCardSummaryRequest {
 }
 
 export interface AppendCardSummaryResponse {
-  card: CardDetailWithSummary;
+  card: SummaryPresentCard;
 }
 
 export interface AddCommentRequest {

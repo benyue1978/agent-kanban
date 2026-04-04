@@ -51,8 +51,13 @@ interface CardReadBase {
     revision: number;
     updatedAt: string;
 }
-interface CardReadNewReady extends CardReadBase {
-    state: typeof CardState.New | typeof CardState.Ready;
+interface CardReadNew extends CardReadBase {
+    state: typeof CardState.New;
+    owner: ActorRef | null;
+    summaryMd: null;
+}
+interface CardReadReady extends CardReadBase {
+    state: typeof CardState.Ready;
     owner: ActorRef | null;
     summaryMd: null;
 }
@@ -60,6 +65,11 @@ interface CardReadInReview extends CardReadBase {
     state: typeof CardState.InReview;
     owner: ActorRef;
     summaryMd: null;
+}
+interface CardReadInReviewWithSummary extends CardReadBase {
+    state: typeof CardState.InReview;
+    owner: ActorRef;
+    summaryMd: string;
 }
 interface CardReadInProgress extends CardReadBase {
     state: typeof CardState.InProgress;
@@ -71,12 +81,15 @@ interface CardReadDone extends CardReadBase {
     owner: ActorRef | null;
     summaryMd: string;
 }
-export type CardListItem = CardReadNewReady | CardReadInReview | CardReadInProgress | CardReadDone;
+export type CardListItem = CardReadNew | CardReadReady | CardReadInReview | CardReadInReviewWithSummary | CardReadInProgress | CardReadDone;
 export type CardDetail = CardListItem & {
     descriptionMd: string;
     comments: CommentRecord[];
 };
-export type CardDetailWithSummary = Extract<CardDetail, {
+export type SummaryPresentCard = Extract<CardDetail, {
+    state: typeof CardState.InReview;
+    summaryMd: string;
+}> | Extract<CardDetail, {
     state: typeof CardState.Done;
 }>;
 export type ClaimedCardDetail = Extract<CardDetail, {
@@ -95,12 +108,17 @@ export interface ProjectDetail {
     repoUrl: string;
     policy: ProjectPolicy;
 }
-export interface BoardColumn {
-    state: CardStateValue;
-    cards: CardListItem[];
+export interface BoardColumn<S extends CardStateValue = CardStateValue> {
+    state: S;
+    cards: Extract<CardListItem, {
+        state: S;
+    }>[];
 }
+export type BoardColumns = {
+    [S in CardStateValue]: BoardColumn<S>;
+};
 export interface BoardResponse {
-    columns: BoardColumn[];
+    columns: BoardColumns;
 }
 export interface ProjectListResponse {
     projects: ProjectListItem[];
@@ -167,7 +185,7 @@ export interface AppendCardSummaryRequest {
     summaryMd: string;
 }
 export interface AppendCardSummaryResponse {
-    card: CardDetailWithSummary;
+    card: SummaryPresentCard;
 }
 export interface AddCommentRequest {
     cardId: string;
