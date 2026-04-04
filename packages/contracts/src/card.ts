@@ -10,6 +10,10 @@ export const CardState = {
 } as const;
 
 export type CardStateValue = (typeof CardState)[keyof typeof CardState];
+export type NonClaimCardStateValue = Exclude<
+  CardStateValue,
+  typeof CardState.InProgress
+>;
 
 export const CommentKind = {
   Progress: "progress",
@@ -151,7 +155,7 @@ export interface UpdateCardMarkdownResponse {
 export interface SetCardStateRequest {
   cardId: string;
   revision: number;
-  to: CardStateValue;
+  to: NonClaimCardStateValue;
 }
 
 export interface SetCardStateResponse {

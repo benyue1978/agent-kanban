@@ -8,6 +8,7 @@ export declare const CardState: {
     readonly Done: "Done";
 };
 export type CardStateValue = (typeof CardState)[keyof typeof CardState];
+export type NonClaimCardStateValue = Exclude<CardStateValue, typeof CardState.InProgress>;
 export declare const CommentKind: {
     readonly Progress: "progress";
     readonly Question: "question";
@@ -123,7 +124,7 @@ export interface UpdateCardMarkdownResponse {
 export interface SetCardStateRequest {
     cardId: string;
     revision: number;
-    to: CardStateValue;
+    to: NonClaimCardStateValue;
 }
 export interface SetCardStateResponse {
     card: CardDetail;
