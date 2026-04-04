@@ -1,0 +1,217 @@
+import { PrismaClient } from "@prisma/client";
+import { afterAll, beforeEach, describe, expect, it } from "vitest";
+import { buildApp } from "../../src/app.js";
+import { createTestPrisma, resetDatabase } from "./test-db.js";
+
+const prisma = createTestPrisma();
+
+async function seedCommentFixture(client: PrismaClient): Promise<void> {
+  await client.project.create({
+    data: {
+      id: "project-1",
+      name: "agent-kanban",
+      repoUrl: "https://example.com/repo.git",
+      policyJson: {
+        allowAgentReview: false,
+        allowSelfReview: false,
+        allowAgentPickUnassignedReady: true,
+        defaultSelectionPolicy: "priority_then_ready_age_then_updated_at",
+      },
+    },
+  });
+
+  await client.collaborator.createMany({
+    data: [
+      {
+        id: "agent-main",
+        kind: "agent",
+        displayName: "Codex Main",
+      },
+      {
+        id: "agent-peer",
+        kind: "agent",
+        displayName: "Codex Peer",
+      },
+      {
+        id: "human-song",
+        kind: "human",
+        displayName: "Song",
+      },
+      {
+        id: "human-reviewer",
+        kind: "human",
+        displayName: "Reviewer",
+      },
+    ],
+  });
+
+  await client.card.create({
+    data: {
+      id: "card-1",
+      projectId: "project-1",
+      title: "Review-ready API task",
+      descriptionMd: `# Review-ready API task
+
+## Goal
+Ship comments and inbox
+
+## Scope
+Implement Task 7
+
+## Definition of Done
+- [ ] comments
+- [ ] inbox`,
+      revision: 3,
+      state: "In Review",
+      ownerId: "agent-main",
+    },
+  });
+}
+
+describe.sequential("comment and inbox routes", () => {
+  beforeEach(async () => {
+    await resetDatabase(prisma);
+    await seedCommentFixture(prisma);
+  });
+
+  afterAll(async () => {
+    await prisma.$disconnect();
+  });
+
+  it("creates mention-driven inbox items and allows status updates", async () => {
+    const app = await buildApp({ prisma });
+
+    const commentResponse = await app.inject({
+      method: "POST",
+      url: "/cards/card-1/comments",
+      payload: {
+        authorId: "agent-main",
+        kind: "question",
+        body: "@human-song can you review this?",
+      },
+    });
+
+    expect(commentResponse.statusCode).toBe(201);
+    expect(commentResponse.json().comment.mentions).toEqual(["human-song"]);
+
+    const inboxResponse = await app.inject({
+      method: "GET",
+      url: "/inbox?collaboratorId=human-song",
+    });
+
+    expect(inboxResponse.statusCode).toBe(200);
+    expect(inboxResponse.json().items).toHaveLength(1);
+    expect(inboxResponse.json().items[0].status).toBe("open");
+
+    const statusResponse = await app.inject({
+      method: "POST",
+      url: `/inbox/items/${inboxResponse.json().items[0].id}/set-status`,
+      payload: {
+        status: "acknowledged",
+      },
+    });
+
+    expect(statusResponse.statusCode).toBe(200);
+    expect(statusResponse.json().item.status).toBe("acknowledged");
+
+    const cardResponse = await app.inject({
+      method: "GET",
+      url: "/cards/card-1",
+    });
+
+    expect(cardResponse.statusCode).toBe(200);
+    expect(cardResponse.json().card.comments).toHaveLength(1);
+    expect(cardResponse.json().card.comments[0].mentions).toEqual(["human-song"]);
+  });
+
+  it("logs comment, owner, state, markdown, and summary events", async () => {
+    const app = await buildApp({ prisma });
+
+    const assignResponse = await app.inject({
+      method: "POST",
+      url: "/cards/card-1/assign-owner",
+      payload: {
+        revision: 3,
+        actorId: "human-reviewer",
+        ownerId: "agent-peer",
+      },
+    });
+    expect(assignResponse.statusCode).toBe(200);
+
+    const stateResponse = await app.inject({
+      method: "POST",
+      url: "/cards/card-1/set-state",
+      payload: {
+        actorId: "human-reviewer",
+        revision: assignResponse.json().card.revision,
+        to: "In Progress",
+      },
+    });
+    expect(stateResponse.statusCode).toBe(200);
+
+    const markdownResponse = await app.inject({
+      method: "POST",
+      url: "/cards/card-1/update-markdown",
+      payload: {
+        actorId: "agent-peer",
+        revision: stateResponse.json().card.revision,
+        descriptionMd: `# Review-ready API task
+
+## Goal
+Ship comments and inbox
+
+## Scope
+Implement Task 7 completely
+
+## Definition of Done
+- [x] comments
+- [ ] inbox`,
+      },
+    });
+    expect(markdownResponse.statusCode).toBe(200);
+
+    const summaryResponse = await app.inject({
+      method: "POST",
+      url: "/cards/card-1/append-summary",
+      payload: {
+        actorId: "agent-peer",
+        revision: markdownResponse.json().card.revision,
+        summaryMd: `### What was done
+- Implemented comments and inbox
+
+### DoD Check
+- [x] comments
+- [x] inbox`,
+      },
+    });
+    expect(summaryResponse.statusCode).toBe(200);
+
+    const commentResponse = await app.inject({
+      method: "POST",
+      url: "/cards/card-1/comments",
+      payload: {
+        authorId: "human-reviewer",
+        kind: "decision",
+        body: "Looks good to me.",
+      },
+    });
+    expect(commentResponse.statusCode).toBe(201);
+
+    const events = await prisma.event.findMany({
+      where: {
+        cardId: "card-1",
+      },
+      orderBy: {
+        createdAt: "asc",
+      },
+    });
+
+    expect(events.map((event) => event.type)).toEqual([
+      "owner_assigned",
+      "state_changed",
+      "markdown_updated",
+      "summary_updated",
+      "comment_added",
+    ]);
+  });
+});

@@ -153,30 +153,35 @@ describe("contracts", () => {
       projectId: "project-1",
       title: "Example",
       descriptionMd: "# Example",
+      actorId: "collaborator-1",
     };
     const createCardResponse: CreateCardResponse = showCardResponse;
     const updateCardMarkdownRequest: UpdateCardMarkdownRequest = {
       cardId: "card-1",
       revision: 1,
       descriptionMd: "# Updated",
+      actorId: "collaborator-1",
     };
     const updateCardMarkdownResponse: UpdateCardMarkdownResponse = showCardResponse;
     const setCardStateRequest: SetCardStateRequest = {
       cardId: "card-1",
       revision: 1,
       to: CardState.Ready,
+      actorId: "collaborator-1",
     };
     const setCardStateResponse: SetCardStateResponse = showCardResponse;
     const assignCardOwnerRequest: AssignCardOwnerRequest = {
       cardId: "card-1",
       revision: 1,
       ownerId: "collaborator-1",
+      actorId: "collaborator-1",
     };
     const assignCardOwnerResponse: AssignCardOwnerResponse = showCardResponse;
     const appendCardSummaryRequest: AppendCardSummaryRequest = {
       cardId: "card-1",
       revision: 1,
       summaryMd: "Done",
+      actorId: "collaborator-1",
     };
     const appendCardSummaryResponse: AppendCardSummaryResponse = {
       card: {
@@ -187,6 +192,7 @@ describe("contracts", () => {
     };
     const addCommentRequest: AddCommentRequest = {
       cardId: "card-1",
+      authorId: "collaborator-1",
       body: "Working on it",
       kind: CommentKind.Progress,
     };

@@ -9,7 +9,16 @@ import {
 } from "@agent-kanban/contracts";
 import { getProtectedSections } from "@agent-kanban/card-markdown";
 import { sortReadyCards } from "@agent-kanban/domain";
-import { Prisma, type Card, type Collaborator, type PrismaClient } from "@prisma/client";
+import {
+  Prisma,
+  type Card,
+  type Comment,
+  type CommentMention,
+  type Collaborator,
+  type PrismaClient,
+} from "@prisma/client";
+
+type DbClient = PrismaClient | Prisma.TransactionClient;
 
 interface CreateCardInput {
   descriptionMd: string;
@@ -22,9 +31,29 @@ type CardWithOwner = Card & {
   owner: Collaborator | null;
 };
 
+type CommentWithMentions = Comment & {
+  mentions: CommentMention[];
+};
+
+type CardDetailRecord = CardWithOwner & {
+  comments: CommentWithMentions[];
+};
+
 type ReadyCardForSorting = Extract<CardListItem, { state: typeof CardState.Ready }> & {
   readyAt: string;
 };
+
+const cardDetailInclude = {
+  owner: true,
+  comments: {
+    include: {
+      mentions: true,
+    },
+    orderBy: {
+      createdAt: "asc",
+    },
+  },
+} satisfies Prisma.CardInclude;
 
 function toActorRef(collaborator: Collaborator | null): ActorRef | null {
   if (collaborator === null) {
@@ -38,8 +67,16 @@ function toActorRef(collaborator: Collaborator | null): ActorRef | null {
   };
 }
 
-function toCommentRecord(): CommentRecord[] {
-  return [];
+function toCommentRecord(comments: CommentWithMentions[]): CommentRecord[] {
+  return comments.map((comment) => ({
+    id: comment.id,
+    cardId: comment.cardId,
+    authorId: comment.authorId,
+    body: comment.bodyMd,
+    kind: comment.kind as CommentRecord["kind"],
+    mentions: comment.mentions.map((mention) => mention.mentionedCollaboratorId),
+    createdAt: toIsoString(comment.createdAt),
+  }));
 }
 
 function toIsoString(value: Date): string {
@@ -87,11 +124,11 @@ function toCardListItem(card: CardWithOwner): CardListItem {
   }
 }
 
-function toCardDetail(card: CardWithOwner): CardDetail {
+function toCardDetail(card: CardDetailRecord): CardDetail {
   return {
     ...toCardListItem(card),
     descriptionMd: card.descriptionMd,
-    comments: toCommentRecord(),
+    comments: toCommentRecord(card.comments),
   };
 }
 
@@ -108,7 +145,7 @@ function createEmptyBoard(): BoardResponse {
 }
 
 export class CardRepository {
-  constructor(private readonly prisma: PrismaClient) {}
+  constructor(private readonly prisma: DbClient) {}
 
   async create(input: CreateCardInput): Promise<CardDetail> {
     const card = await this.prisma.card.create({
@@ -120,9 +157,7 @@ export class CardRepository {
         state: CardState.New,
         priority: input.priority ?? null,
       },
-      include: {
-        owner: true,
-      },
+      include: cardDetailInclude,
     });
 
     return toCardDetail(card);
@@ -161,7 +196,7 @@ export class CardRepository {
   async findById(cardId: string): Promise<CardDetail | null> {
     const card = await this.prisma.card.findUnique({
       where: { id: cardId },
-      include: { owner: true },
+      include: cardDetailInclude,
     });
 
     return card === null ? null : toCardDetail(card);
@@ -171,7 +206,7 @@ export class CardRepository {
     const card = await this.prisma.card.update({
       where: { id: cardId },
       data,
-      include: { owner: true },
+      include: cardDetailInclude,
     });
 
     return toCardDetail(card);

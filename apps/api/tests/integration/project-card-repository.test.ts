@@ -1,12 +1,12 @@
-import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { afterAll, beforeEach, describe, expect, it } from "vitest";
 import { CardRepository } from "../../src/repositories/card-repository.js";
 import { ProjectRepository } from "../../src/repositories/project-repository.js";
 import { createTestPrisma, resetDatabase } from "./test-db.js";
 
 const prisma = createTestPrisma();
 
-describe("project and card repositories", () => {
-  beforeAll(async () => {
+describe.sequential("project and card repositories", () => {
+  beforeEach(async () => {
     await resetDatabase(prisma);
   });
 

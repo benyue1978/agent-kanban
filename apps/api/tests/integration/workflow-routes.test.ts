@@ -68,7 +68,7 @@ Build it
   });
 }
 
-describe("workflow routes", () => {
+describe.sequential("workflow routes", () => {
   beforeEach(async () => {
     await resetDatabase(prisma);
     await seedWorkflowFixture(prisma);

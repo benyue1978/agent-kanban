@@ -25,10 +25,12 @@ const setCardStateRequest = {
   cardId: "card-1",
   revision: 7,
   to: CardState.InReview,
+  actorId: "collaborator-1",
 } satisfies SetCardStateRequest;
 
 const addCommentRequest = {
   cardId: "card-1",
+  authorId: "collaborator-1",
   body: "Working on it",
   kind: "progress",
 } satisfies AddCommentRequest;

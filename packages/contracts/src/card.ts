@@ -187,6 +187,7 @@ export interface CreateCardRequest {
   title: string;
   descriptionMd: string;
   priority?: number | null;
+  actorId?: string;
 }
 
 export interface CreateCardResponse {
@@ -197,6 +198,7 @@ export interface UpdateCardMarkdownRequest {
   cardId: string;
   revision: number;
   descriptionMd: string;
+  actorId?: string;
 }
 
 export interface UpdateCardMarkdownResponse {
@@ -207,6 +209,7 @@ export interface SetCardStateRequest {
   cardId: string;
   revision: number;
   to: NonClaimCardStateValue;
+  actorId?: string;
 }
 
 export interface SetCardStateResponse {
@@ -217,6 +220,7 @@ export interface AssignCardOwnerRequest {
   cardId: string;
   revision: number;
   ownerId: string | null;
+  actorId?: string;
 }
 
 export interface AssignCardOwnerResponse {
@@ -227,6 +231,7 @@ export interface AppendCardSummaryRequest {
   cardId: string;
   revision: number;
   summaryMd: string;
+  actorId?: string;
 }
 
 export interface AppendCardSummaryResponse {
@@ -235,6 +240,7 @@ export interface AppendCardSummaryResponse {
 
 export interface AddCommentRequest {
   cardId: string;
+  authorId: string;
   body: string;
   kind: CommentKindValue;
 }

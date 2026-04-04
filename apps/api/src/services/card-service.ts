@@ -15,7 +15,7 @@ import {
   type ProjectPolicy,
 } from "@agent-kanban/contracts";
 import { WorkflowDomainError, canTransition } from "@agent-kanban/domain";
-import type { PrismaClient } from "@prisma/client";
+import type { Prisma, PrismaClient } from "@prisma/client";
 import { CardRepository } from "../repositories/card-repository.js";
 import { ProjectRepository } from "../repositories/project-repository.js";
 
@@ -39,6 +39,18 @@ export class ApiError extends Error {
   }
 }
 
+type EventType =
+  | "card_created"
+  | "owner_assigned"
+  | "state_changed"
+  | "markdown_updated"
+  | "summary_updated";
+
+type EventActor = {
+  id: string;
+  kind: "human" | "agent";
+};
+
 function asProjectPolicy(value: unknown): ProjectPolicy {
   return (value ?? defaultProjectPolicy) as ProjectPolicy;
 }
@@ -49,6 +61,77 @@ function isCardStateValue(value: string): value is CardStateValue {
 
 function workflowErrorToApiError(error: WorkflowDomainError): ApiError {
   return new ApiError(400, error.code, error.message, error.details);
+}
+
+async function findActor(
+  prisma: PrismaClient,
+  actorId: string | null | undefined
+): Promise<EventActor | null> {
+  if (actorId === undefined || actorId === null) {
+    return null;
+  }
+
+  const actor = await prisma.collaborator.findUnique({
+    where: { id: actorId },
+    select: {
+      id: true,
+      kind: true,
+    },
+  });
+
+  if (actor === null) {
+    throw new ApiError(404, "forbidden_action", `actor not found: ${actorId}`);
+  }
+
+  return {
+    id: actor.id,
+    kind: actor.kind === "agent" ? "agent" : "human",
+  };
+}
+
+async function resolveActor(
+  prisma: PrismaClient,
+  ...candidateActorIds: Array<string | null | undefined>
+): Promise<EventActor | null> {
+  for (const candidateActorId of candidateActorIds) {
+    const actor = await findActor(prisma, candidateActorId);
+
+    if (actor !== null) {
+      return actor;
+    }
+  }
+
+  return null;
+}
+
+async function createEvent(
+  tx: Prisma.TransactionClient,
+  input: {
+    actorId: string | null;
+    cardId: string;
+    payloadJson: Prisma.InputJsonValue;
+    projectId: string;
+    type: EventType;
+  }
+): Promise<void> {
+  if (input.actorId === null) {
+    return;
+  }
+
+  await tx.event.create({
+    data: {
+      projectId: input.projectId,
+      cardId: input.cardId,
+      actorId: input.actorId,
+      type: input.type,
+      payloadJson: input.payloadJson,
+    },
+  });
+}
+
+function hasRequiredSections(title: string, descriptionMd: string): boolean {
+  const sections = getProtectedSections(descriptionMd);
+  return Boolean(title.length > 0 && sections.goal && sections.scope && sections.definitionOfDone);
 }
 
 export class CardService {
@@ -88,59 +171,177 @@ export class CardService {
   }
 
   async createCard(input: CreateCardRequest): Promise<CardDetail> {
-    return this.cards.create(input);
+    const actor = await resolveActor(this.prisma, input.actorId);
+
+    const card = await this.prisma.$transaction(async (tx) => {
+      const created = await new CardRepository(tx as PrismaClient).create(input);
+
+      await createEvent(tx, {
+        actorId: actor?.id ?? null,
+        cardId: created.id,
+        projectId: created.projectId,
+        type: "card_created",
+        payloadJson: {
+          state: created.state,
+        },
+      });
+
+      return created;
+    });
+
+    return card;
   }
 
-  async assignOwner(cardId: string, revision: number, ownerId: string | null): Promise<CardDetail> {
-    const card = await this.getCard(cardId);
+  async assignOwner(
+    cardId: string,
+    revision: number,
+    ownerId: string | null,
+    actorId?: string
+  ): Promise<CardDetail> {
+    const existing = await this.prisma.card.findUnique({
+      where: { id: cardId },
+      select: {
+        id: true,
+        ownerId: true,
+        projectId: true,
+        revision: true,
+      },
+    });
 
-    if (card.revision !== revision) {
+    if (existing === null) {
+      throw new ApiError(404, "invalid_transition", "card not found");
+    }
+
+    if (existing.revision !== revision) {
       throw new ApiError(409, "revision_conflict", "stale revision for owner assignment");
     }
 
-    return this.cards.updateById(cardId, {
-      ownerId,
-      revision: {
-        increment: 1,
-      },
+    const actor = await resolveActor(this.prisma, actorId, existing.ownerId, ownerId);
+
+    return this.prisma.$transaction(async (tx) => {
+      const updated = await new CardRepository(tx as PrismaClient).updateById(cardId, {
+        ownerId,
+        revision: {
+          increment: 1,
+        },
+      });
+
+      await createEvent(tx, {
+        actorId: actor?.id ?? null,
+        cardId,
+        projectId: existing.projectId,
+        type: "owner_assigned",
+        payloadJson: {
+          previousOwnerId: existing.ownerId,
+          ownerId,
+        },
+      });
+
+      return updated;
     });
   }
 
-  async updateMarkdown(cardId: string, revision: number, descriptionMd: string): Promise<CardDetail> {
-    const card = await this.getCard(cardId);
+  async updateMarkdown(
+    cardId: string,
+    revision: number,
+    descriptionMd: string,
+    actorId?: string
+  ): Promise<CardDetail> {
+    const existing = await this.prisma.card.findUnique({
+      where: { id: cardId },
+      select: {
+        id: true,
+        ownerId: true,
+        projectId: true,
+        revision: true,
+      },
+    });
 
-    if (card.revision !== revision) {
+    if (existing === null) {
+      throw new ApiError(404, "invalid_transition", "card not found");
+    }
+
+    if (existing.revision !== revision) {
       throw new ApiError(409, "revision_conflict", "stale revision for markdown update");
     }
 
-    return this.cards.updateById(cardId, {
-      descriptionMd,
-      revision: {
-        increment: 1,
-      },
+    const actor = await resolveActor(this.prisma, actorId, existing.ownerId);
+
+    return this.prisma.$transaction(async (tx) => {
+      const updated = await new CardRepository(tx as PrismaClient).updateById(cardId, {
+        descriptionMd,
+        revision: {
+          increment: 1,
+        },
+      });
+
+      await createEvent(tx, {
+        actorId: actor?.id ?? null,
+        cardId,
+        projectId: existing.projectId,
+        type: "markdown_updated",
+        payloadJson: {
+          revision: updated.revision,
+        },
+      });
+
+      return updated;
     });
   }
 
-  async appendSummary(cardId: string, revision: number, summaryMd: string): Promise<CardDetail> {
-    const card = await this.getCard(cardId);
+  async appendSummary(
+    cardId: string,
+    revision: number,
+    summaryMd: string,
+    actorId?: string
+  ): Promise<CardDetail> {
+    const existing = await this.prisma.card.findUnique({
+      where: { id: cardId },
+      select: {
+        descriptionMd: true,
+        ownerId: true,
+        projectId: true,
+        revision: true,
+      },
+    });
 
-    if (card.revision !== revision) {
+    if (existing === null) {
+      throw new ApiError(404, "invalid_transition", "card not found");
+    }
+
+    if (existing.revision !== revision) {
       throw new ApiError(409, "revision_conflict", "stale revision for summary update");
     }
 
-    const descriptionMd = appendCompletionSummary(card.descriptionMd, summaryMd);
+    const descriptionMd = appendCompletionSummary(existing.descriptionMd, summaryMd);
+    const actor = await resolveActor(this.prisma, actorId, existing.ownerId);
 
-    return this.cards.updateById(cardId, {
-      descriptionMd,
-      revision: {
-        increment: 1,
-      },
+    return this.prisma.$transaction(async (tx) => {
+      const updated = await new CardRepository(tx as PrismaClient).updateById(cardId, {
+        descriptionMd,
+        revision: {
+          increment: 1,
+        },
+      });
+
+      await createEvent(tx, {
+        actorId: actor?.id ?? null,
+        cardId,
+        projectId: existing.projectId,
+        type: "summary_updated",
+        payloadJson: {
+          revision: updated.revision,
+        },
+      });
+
+      return updated;
     });
   }
 
   async setState(
     cardId: string,
     input: {
+      actorId?: string;
       ownerId?: string;
       revision?: number;
       to: string;
@@ -154,8 +355,8 @@ export class CardService {
     const existing = await this.prisma.card.findUnique({
       where: { id: cardId },
       include: {
-        project: true,
         owner: true,
+        project: true,
       },
     });
 
@@ -173,27 +374,25 @@ export class CardService {
       throw new ApiError(409, "revision_conflict", "stale revision for state transition");
     }
 
-    if (targetState === CardState.InProgress) {
-      if (input.ownerId === undefined) {
-        throw new ApiError(400, "missing_owner", "ownerId is required to claim a card");
-      }
+    if (targetState === CardState.InProgress && input.ownerId !== undefined) {
+      const claimOwnerId = input.ownerId;
 
       if (currentState !== CardState.Ready) {
         throw new ApiError(409, "claim_conflict", "card is no longer claimable");
       }
 
-      const policy = asProjectPolicy(existing.project.policyJson);
+      const actor = await resolveActor(this.prisma, input.actorId, claimOwnerId);
 
       try {
         canTransition({
           from: currentState,
           to: CardState.InProgress,
-          actorKind: "agent",
-          actorId: input.ownerId,
+          actorKind: actor?.kind ?? "agent",
+          actorId: actor?.id ?? claimOwnerId,
           ownerId: existing.ownerId,
-          targetOwnerId: input.ownerId,
+          targetOwnerId: claimOwnerId,
           humanInstructionGranted: true,
-          policy,
+          policy: asProjectPolicy(existing.project.policyJson),
         });
       } catch (error) {
         if (error instanceof WorkflowDomainError) {
@@ -202,49 +401,60 @@ export class CardService {
         throw error;
       }
 
-      const result = await this.prisma.card.updateMany({
-        where: {
-          id: cardId,
-          state: CardState.Ready,
-        },
-        data: {
-          ownerId: input.ownerId,
-          state: CardState.InProgress,
-          revision: {
-            increment: 1,
+      await this.prisma.$transaction(async (tx) => {
+        const result = await tx.card.updateMany({
+          where: {
+            id: cardId,
+            state: CardState.Ready,
           },
-        },
-      });
+          data: {
+            ownerId: claimOwnerId,
+            state: CardState.InProgress,
+            revision: {
+              increment: 1,
+            },
+          },
+        });
 
-      if (result.count === 0) {
-        throw new ApiError(409, "claim_conflict", "card is no longer claimable");
-      }
+        if (result.count === 0) {
+          throw new ApiError(409, "claim_conflict", "card is no longer claimable");
+        }
+
+        await createEvent(tx, {
+          actorId: actor?.id ?? claimOwnerId,
+          cardId,
+          projectId: existing.projectId,
+          type: "state_changed",
+          payloadJson: {
+            from: currentState,
+            to: CardState.InProgress,
+            ownerId: claimOwnerId,
+          },
+        });
+      });
 
       return this.getCard(cardId);
     }
 
-    const descriptionSections = getProtectedSections(existing.descriptionMd);
+    const actor = await resolveActor(this.prisma, input.actorId, existing.ownerId);
+    const transitionInput = {
+      from: currentState,
+      to: targetState,
+      actorKind: actor?.kind ?? "human",
+      ownerId: existing.ownerId,
+      requiredSectionsPresent: hasRequiredSections(existing.title, existing.descriptionMd),
+      titlePresent: existing.title.length > 0,
+      executionResultPresent: true,
+      reviewRationalePresent: true,
+      reviewGatePassed: true,
+      summaryPresent: getProtectedSections(existing.descriptionMd).finalSummary !== undefined,
+      dodCheckPresent: getProtectedSections(existing.descriptionMd).finalSummaryDodCheck !== undefined,
+      policy: asProjectPolicy(existing.project.policyJson),
+      ...(actor?.id === undefined ? {} : { actorId: actor.id }),
+    };
 
     try {
-        canTransition({
-        from: currentState,
-        to: targetState,
-        actorKind: "human",
-        actorId: existing.ownerId ?? "human-reviewer",
-        ownerId: existing.ownerId,
-        requiredSectionsPresent: Boolean(
-          existing.title.length > 0 &&
-            descriptionSections.goal &&
-            descriptionSections.scope &&
-            descriptionSections.definitionOfDone
-        ),
-        titlePresent: existing.title.length > 0,
-        executionResultPresent: true,
-        reviewRationalePresent: true,
-        reviewGatePassed: true,
-        summaryPresent: descriptionSections.finalSummary !== undefined,
-        dodCheckPresent: descriptionSections.finalSummaryDodCheck !== undefined,
-      });
+      canTransition(transitionInput);
     } catch (error) {
       if (error instanceof WorkflowDomainError) {
         throw workflowErrorToApiError(error);
@@ -256,11 +466,27 @@ export class CardService {
       validateCompletionSummary(existing.descriptionMd);
     }
 
-    return this.cards.updateById(cardId, {
-      state: targetState,
-      revision: {
-        increment: 1,
-      },
+    return this.prisma.$transaction(async (tx) => {
+      const updated = await new CardRepository(tx as PrismaClient).updateById(cardId, {
+        state: targetState,
+        revision: {
+          increment: 1,
+        },
+      });
+
+      await createEvent(tx, {
+        actorId: actor?.id ?? null,
+        cardId,
+        projectId: existing.projectId,
+        type: "state_changed",
+        payloadJson: {
+          from: currentState,
+          to: targetState,
+          ownerId: updated.owner?.id ?? null,
+        },
+      });
+
+      return updated;
     });
   }
 }
