@@ -58,6 +58,13 @@ export interface CardDetail extends CardListItem {
     summaryMd: string | null;
     comments: CommentRecord[];
 }
+export type CardDetailWithSummary = Omit<CardDetail, "summaryMd"> & {
+    summaryMd: string;
+};
+export type ClaimedCardDetail = Omit<CardDetail, "state" | "owner"> & {
+    state: typeof CardState.InProgress;
+    owner: ActorRef;
+};
 export interface ProjectListItem {
     id: string;
     name: string;
@@ -143,7 +150,7 @@ export interface AppendCardSummaryRequest {
     summaryMd: string;
 }
 export interface AppendCardSummaryResponse {
-    card: CardDetail;
+    card: CardDetailWithSummary;
 }
 export interface AddCommentRequest {
     cardId: string;
@@ -173,7 +180,7 @@ export interface ClaimReadyCardRequest {
     ownerId: string;
 }
 export interface ClaimReadyCardResponse {
-    card: CardDetail;
+    card: ClaimedCardDetail;
 }
 export interface ApiErrorResponse extends ErrorResponse {
     error: ContractError;

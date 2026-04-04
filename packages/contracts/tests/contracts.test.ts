@@ -18,6 +18,7 @@ import type {
   CardListItem,
   ClaimReadyCardRequest,
   ClaimReadyCardResponse,
+  CardDetailWithSummary,
   CreateCardRequest,
   CreateCardResponse,
   ListCardsRequest,
@@ -178,7 +179,12 @@ describe("contracts", () => {
       revision: 1,
       summaryMd: "Done",
     };
-    const appendCardSummaryResponse: AppendCardSummaryResponse = showCardResponse;
+    const appendCardSummaryResponse: AppendCardSummaryResponse = {
+      card: {
+        ...showCardResponse.card,
+        summaryMd: "Done",
+      } satisfies CardDetailWithSummary,
+    };
     const addCommentRequest: AddCommentRequest = {
       cardId: "card-1",
       body: "Working on it",
@@ -248,7 +254,7 @@ describe("contracts", () => {
     expect(assignCardOwnerRequest.ownerId).toBe("collaborator-1");
     expect(assignCardOwnerResponse.card.owner).toBeNull();
     expect(appendCardSummaryRequest.summaryMd).toBe("Done");
-    expect(appendCardSummaryResponse.card.summaryMd).toBeNull();
+    expect(appendCardSummaryResponse.card.summaryMd).toBe("Done");
     expect(addCommentRequest.kind).toBe(CommentKind.Progress);
     expect(addCommentResponse.comment.body).toBe("Working on it");
     expect(listInboxRequest.status).toBe(InboxItemStatus.Open);
