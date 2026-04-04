@@ -115,6 +115,37 @@ Rules:
 - avoid accidental overwrite by full markdown update
 - backend should reject full update attempts that corrupt or remove protected summary structure unexpectedly
 
+## Claim and concurrency safety
+
+There are two distinct concurrency risks in V1:
+
+### 1. Markdown update conflicts
+
+When two actors update the same card description concurrently:
+
+- backend should reject stale full-markdown updates with `revision_conflict`
+
+### 2. Claim conflicts
+
+When two actors attempt to take the same Ready card into In Progress concurrently:
+
+- backend should atomically verify eligibility, assign owner, and change state
+- if eligibility changed concurrently, backend should reject with `claim_conflict` or another stable machine-usable conflict error
+
+## Structured command result contract
+
+Structured commands should return machine-usable results.
+
+Where relevant, responses should include:
+
+- card id
+- new revision
+- resulting state
+- owner
+- machine-usable error on failure
+
+This helps agent skills behave predictably.
+
 ## Suggested Backend Behavior
 
 The backend should not try to become a general markdown merge engine.

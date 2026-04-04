@@ -71,9 +71,17 @@ Once draft planning cards have been backfilled into the system:
 - bootstrap seed docs may remain in the repo as historical or reference material
 - if retained, they should be clearly marked as backfilled or historical
 
-Product docs, architecture docs, and long-lived reference docs should remain in the repo.
+## Seed doc marking convention
 
-Task progress and active planning should move into the running system.
+V1 should use a simple explicit marking convention for retained bootstrap seed docs.
+
+Recommended options:
+
+- front matter such as `status: backfilled`
+- dedicated directory such as `bootstrap/` or `docs/bootstrap-seed/`
+- filename convention indicating historical seed status
+
+The important point is that retained seed docs must not look like active planning trackers.
 
 ## Why this matters
 

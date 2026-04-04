@@ -1,0 +1,290 @@
+---
+name: agent-kanban
+description: Use when agents need to interact with the agent-kanban system to pick work, execute tasks, update card state, record progress, and complete cards within the repo-backed workflow
+---
+
+## Overview
+
+This skill defines how an agent should interact with the agent-kanban system.
+
+The goal is to ensure that agents can reliably:
+
+- pick tasks
+- understand context
+- execute work
+- update state
+- leave clear history
+
+This skill assumes the system model defined in the repo docs:
+
+- repo is authoritative for code and artifacts
+- Kanban is authoritative for task process and progress
+- cards are execution harnesses
+- workflow rules are enforced by backend API
+- only two actor types exist in V1: human and agent
+
+## Runtime Model
+
+An agent session should understand three different things:
+
+- `repo_url` = logical repository identity for the project
+- local working directory / worktree = local execution context
+- `kanban_url` = Kanban system endpoint
+
+The agent usually works inside a local clone or worktree, but the project itself is identified by logical repo identity rather than a machine-specific path.
+
+## Connection Assumptions
+
+An agent should have access to:
+
+- current repo context
+- target `kanban_url`
+- actor identity and auth
+
+These may come from:
+
+- current working directory
+- local config
+- environment variables
+- explicit CLI arguments
+
+## Core Principles
+
+1. **Repo is implementation truth**
+
+   * code, tests, docs, and artifacts in the repo are the authoritative implementation state
+
+2. **Kanban is process truth**
+
+   * card state, ownership, comments, and workflow history live in the Kanban system
+
+3. **Comments are timeline, not final result**
+
+   * comments record progress, questions, notes, and decisions
+   * comments do not replace Final Summary
+
+4. **Final Summary is required before Done**
+
+   * important decisions affecting result understanding should be reflected there
+   * readers should not need to reconstruct final state only from comment history
+
+5. **Prefer structured commands for critical updates**
+
+   * use structured commands for state, ownership, summary, and comments
+   * use full markdown roundtrip for larger planning edits
+
+## 1. Getting a Task
+
+Agents can get work in two ways:
+
+- explicit human instruction
+- list and inspect assigned tasks
+
+Examples:
+
+`kanban list --assigned-to me`
+`kanban list --state Ready`
+
+Unless project policy explicitly allows picking unassigned Ready cards, the agent should not claim arbitrary work on its own.
+
+If project policy allows claiming an unassigned Ready card, the agent should still follow the default selection policy and let backend enforce claim safety.
+
+## 2. Understanding a Card
+
+Before working, focus on:
+
+- Goal
+- Context
+- Scope
+- Definition of Done
+- Constraints
+- Final Summary, if present
+- recent comments, especially `question` and `decision`
+
+The repo remains the source of truth for code and detailed artifacts.
+
+The card is the source of truth for task process and execution framing.
+
+## 3. Recommended Execution Flow
+
+Typical agent flow:
+
+1. identify the target card
+2. read card content
+3. inspect current repo state
+4. claim or confirm ownership if needed
+5. perform work in repo
+6. leave progress comments
+7. update summary
+8. move card through workflow
+
+## 4. Structured Commands
+
+Prefer these commands for critical updates:
+
+### Set state
+
+`kanban set-state --id 123 --to "In Progress"`
+
+### Assign owner
+
+`kanban assign-owner --id 123 --to agent-coder`
+
+### Append summary
+
+`kanban append-summary --id 123 --file summary.md`
+
+### Add comment
+
+`kanban comment --id 123 --body "..." --kind progress`
+
+Use full markdown roundtrip when editing planning content or larger descriptive sections:
+
+`kanban show --id 123 > card.md`
+edit locally
+`kanban update-card --id 123 --file card.md --revision <known_revision>`
+
+## 5. Comment Usage
+
+Use comment kinds intentionally.
+
+### `progress`
+
+Use for:
+
+- implementation completed
+- tests added
+- artifact created
+- repo update summary
+
+### `question`
+
+Use for:
+
+- asking human for decision
+- missing requirement clarification
+- ambiguous workflow blocking question
+
+### `decision`
+
+Use for:
+
+- recording a design decision
+- stating review outcome
+- capturing direction changes
+
+### `note`
+
+Use for:
+
+- handoff
+- minor context
+- low-importance messages
+
+If a decision materially affects final understanding of the work, it should also be reflected in Final Summary before the card is Done.
+
+## 6. Workflow Behavior
+
+Cards move through:
+
+New → Ready → In Progress → In Review → Done
+
+Important constraints:
+
+- do not move to In Progress without an owner
+- do not move to Done without Final Summary
+- do not assume comments alone are enough for completion
+- respect backend validation
+
+## 7. Claiming Work Safely
+
+Taking a card from Ready to In Progress is a claim action.
+
+The backend may reject a claim if another actor already changed the card.
+
+Possible conflict cases include:
+
+- another actor already claimed the card
+- card is no longer Ready
+- policy does not allow the action
+
+Handle this as normal system behavior, not as an unexpected failure.
+
+## 8. Conflict Handling
+
+The agent should understand and handle machine-usable errors.
+
+Common error types may include:
+
+- `invalid_transition`
+- `missing_owner`
+- `missing_required_section`
+- `review_gate_not_passed`
+- `summary_required`
+- `forbidden_action`
+- `revision_conflict`
+- `claim_conflict`
+
+### Recommended behavior
+
+#### On `revision_conflict`
+
+- re-fetch the latest card
+- inspect what changed
+- re-apply the intended update safely
+
+#### On `claim_conflict`
+
+- do not force takeover
+- re-list tasks
+- choose another eligible card or wait for human instruction
+
+#### On `missing_required_section` or `summary_required`
+
+- update the missing section explicitly
+- do not try to bypass workflow rules
+
+#### On `review_gate_not_passed`
+
+- inspect comments and review rationale
+- return card to active work if needed
+
+## 9. Final Summary (Critical)
+
+Before moving a card to Done:
+
+- ensure Final Summary exists
+- ensure DoD Check is filled or explicitly addressed
+- include key decisions if they matter for result interpretation
+- link to relevant repo artifacts
+
+Final Summary should answer:
+
+- what was done
+- what important decisions were made
+- where the relevant artifacts live
+- how DoD was satisfied
+
+## 10. Anti-patterns
+
+Do not:
+
+- treat comments as the final deliverable
+- overwrite Goal or Definition of Done casually
+- rename protected markdown headings
+- rely on stale local card copies after conflict errors
+- assume local repo path is the project identity
+- bypass structured commands for critical updates unless necessary
+
+## 11. Working Philosophy
+
+The purpose of the agent is not only to do work, but to leave the system understandable for the next reader.
+
+That means:
+
+- repo should clearly reflect implementation truth
+- card should clearly reflect execution truth
+- comments should clearly reflect timeline
+- Final Summary should clearly reflect outcome
+
+A good agent session leaves behind a card that a human can understand without replaying the entire conversation.

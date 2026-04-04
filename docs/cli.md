@@ -13,6 +13,27 @@ Agents interact with the system through CLI commands, not direct database or UI 
 - Markdown should remain the main flexible editing interface
 - Critical operations should also have structured commands
 
+## Connection Model
+
+An agent session should have access to:
+
+- current repo context
+- target `kanban_url`
+- actor identity / auth
+
+A V1 implementation may provide these via:
+
+- current working directory
+- local config file
+- environment variables
+- explicit CLI flags
+
+Recommended conceptual model:
+
+- `repo_url` = logical repository identity
+- local cwd / repo_path = local execution context
+- `kanban_url` = task system endpoint
+
 ## Commands
 
 ### List cards
@@ -50,6 +71,16 @@ edit card.md
 ### Add comment
 
 `kanban comment --id 123 --body "..." --kind progress`
+
+## Structured command result contract
+
+Structured commands should return machine-usable results including, where relevant:
+
+- card id
+- new revision
+- resulting state
+- owner
+- machine-usable error on failure
 
 ## Behavior
 

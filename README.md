@@ -20,7 +20,7 @@ This is not a workflow engine and not an autonomous orchestrator. It is a Kanban
 
 One Kanban equals one project.
 
-A project is usually bound to one Git repository. The repository manages source code, project documents, and artifacts. The Kanban manages the collaboration process, task state, and execution history.
+A project is usually bound to one logical Git repository. The repository manages source code, project documents, and artifacts. The Kanban manages the collaboration process, task state, and execution history.
 
 A system can contain multiple projects, therefore multiple Kanban boards.
 
@@ -76,6 +76,15 @@ V1 does not include:
 - workflow engine
 - deep GitHub PR policy management inside the Kanban system
 
+## Connection model
+
+At runtime, the working model is:
+
+- `repo_url` = logical repository identity for the project
+- local `repo_path` or current working directory = local execution context
+- `kanban_url` = the Kanban system endpoint
+- actor identity and auth = current caller identity
+
 ## Bootstrapping goal
 
 The MVP is not only to make the system usable.
@@ -84,20 +93,21 @@ The real bar is that once the system is up and running, the repo owner can insta
 
 That means the system must become able to manage its own future development.
 
-## Initial document map
+## Document map
 
 - `docs/product.md` — product scope, concepts, and user model
 - `docs/domain-model.md` — entities, relationships, lifecycle, and rules
 - `docs/architecture.md` — technical architecture and responsibilities
 - `docs/card-spec.md` — card structure, markdown template, summary rules
-- `docs/workflow.md` — workflow rules, state transitions, and action policy
+- `docs/workflow.md` — workflow rules, state transitions, claim rules, and action policy
+- `docs/project-policy.md` — minimal policy surface for workflow and review behavior
 - `docs/comment-model.md` — comment kinds, inbox semantics, and summary boundary
 - `docs/markdown-model.md` — markdown update rules, revision checks, and partial commands
 - `docs/source-of-truth.md` — layered source-of-truth model
 - `docs/bootstrapping.md` — how the system goes from repo-first planning to self-management
 - `docs/cli.md` — CLI and agent interaction model
 - `docs/web-ui.md` — human-facing web UI requirements
-- `docs/mvp.md` — MVP definition and self-hosting / bootstrapping criteria
+- `docs/mvp.md` — MVP definition and bootstrapping criteria
 - `skills/SKILL.md` — agent protocol for using the system
 
 ## Tech choices

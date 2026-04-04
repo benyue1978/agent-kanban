@@ -27,6 +27,32 @@ Web UI provides:
 - card detail view
 - comments and inbox
 
+## Layer separation
+
+### Domain layer
+
+The domain layer includes:
+
+- project
+- repo_url
+- card
+- collaborator
+- comment
+- event
+
+### Runtime layer
+
+The runtime layer includes:
+
+- kanban_url
+- local cwd / worktree
+- local repo_path
+- current branch
+- actor identity
+- local auth / API token
+
+The system should keep domain identity and runtime execution context separate.
+
 ## Components
 
 ### Backend
@@ -39,6 +65,7 @@ Responsibilities:
 - record events
 - enforce workflow validation
 - enforce revision checks for markdown updates
+- enforce claim safety for Ready → In Progress
 
 Tech:
 
@@ -81,6 +108,18 @@ UI is read-heavy, with limited write actions for humans.
 6. API validates updates, records events, and persists state
 7. UI reflects state
 
+## Claim safety
+
+Taking a card into `In Progress` should be treated as a claim action.
+
+The backend should atomically:
+
+- verify the card is still eligible
+- set owner
+- move state to `In Progress`
+
+If eligibility changed concurrently, backend should reject the operation with a machine-usable error.
+
 ## Key Design Choices
 
 ### Source-of-truth separation
@@ -98,6 +137,7 @@ UI is read-heavy, with limited write actions for humans.
 ### Concurrency safety
 
 - full markdown updates require optimistic locking through revision or timestamp checks
+- claim operations must be atomic
 - backend should reject unsafe overwrites instead of trying to do complex merges in V1
 
 ### Event Log
@@ -124,4 +164,4 @@ UI is read-heavy, with limited write actions for humans.
 - DoD validation
 - summary generation automation
 - Git integration enhancements
-- richer execution runtime bindings beyond local `repo_path`
+- richer execution runtime bindings beyond local repo context

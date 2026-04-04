@@ -17,7 +17,7 @@ It is designed to support a workflow where:
 ### Project (Kanban)
 
 - one project corresponds to one Kanban board
-- a project is bound to a Git repository
+- a project is bound to a logical Git repository
 - the repository manages code and documents
 - the Kanban manages tasks and collaboration
 
@@ -104,6 +104,12 @@ Humans primarily interact through a web UI.
 Agents primarily interact through CLI and API.
 
 The product should support these two access styles naturally rather than forcing both into the same interface.
+
+### 5. Logical repo identity over local path identity
+
+The product should think in terms of logical repository identity at the project level.
+
+Local clone path, current working directory, and worktree are runtime execution context, not the core identity of a project.
 
 ## Key Differentiator
 

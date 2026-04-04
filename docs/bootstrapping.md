@@ -74,6 +74,14 @@ After draft cards have been backfilled into the running system:
 - active task planning, task state, and task progression should happen in the Kanban system
 - if bootstrap card drafts are retained, they should be clearly marked as historical or backfilled
 
+## Seed doc marking convention
+
+Recommended V1 approaches:
+
+- front matter such as `status: backfilled`
+- dedicated directory such as `bootstrap/` or `docs/bootstrap-seed/`
+- filename convention that clearly indicates seed status
+
 ## Important distinction
 
 ### Before MVP exists

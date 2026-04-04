@@ -22,14 +22,15 @@ A project is one Kanban.
 - id
 - name
 - description
-- repo_path
+- repo_url
 - config
 
 ### Rules
 
-- One project is bound to one repository
+- One project is bound to one logical repository
 - V1 assumes one primary repo per project
-- `repo_path` is acceptable for V1 local execution, but should be treated as an implementation-facing binding rather than a permanent identity model for future distributed execution
+- `repo_url` is the project-level repository identity
+- local `repo_path` is runtime-local execution context, not project identity
 
 ## Card
 
@@ -124,16 +125,21 @@ V1 does not require threaded nested comments.
 
 All important actions should be recorded as events.
 
-### Event types
+### Must-log event types
 
-- card_created
-- card_updated
-- state_changed
-- owner_assigned
-- comment_added
-- priority_changed
-- card_archived
-- summary_updated
+The following actions must always result in event records:
+
+- `card_created`
+- `owner_assigned`
+- `state_changed`
+- `markdown_updated`
+- `summary_updated`
+- `comment_added`
+- `card_archived`
+
+If reopen is supported:
+
+- `card_reopened`
 
 ### Purpose
 

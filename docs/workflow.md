@@ -100,13 +100,11 @@ Who can trigger:
 - human
 - assigned owner
 - agent acting under explicit human instruction
-
-Recommended behavior:
-
-- assigning owner and moving to In Progress should be treated as one logical action when possible
+- agent picking an unassigned Ready card only if project policy allows it
 
 Required side effects:
 
+- claim should atomically verify eligibility, assign owner, and change state
 - record `state_changed`
 - record `owner_assigned` if owner changes in the same operation
 
@@ -139,6 +137,7 @@ Meaning:
 Required conditions:
 
 - Final Summary exists
+- DoD Check is filled or explicitly addressed
 - review gate is explicitly passed by an allowed human or agent action
 
 Who can trigger:
@@ -208,6 +207,8 @@ Suggested stable error types:
 - `review_gate_not_passed`
 - `summary_required`
 - `forbidden_action`
+- `revision_conflict`
+- `claim_conflict`
 
 CLI and agent skills should be able to react to these errors predictably.
 

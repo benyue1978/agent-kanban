@@ -10,9 +10,9 @@ It acts as a lightweight harness that provides context for a task.
 
 Card description is markdown with a recommended structure.
 
-### Template
+### Canonical template
 
-```
+```markdown
 # Title
 
 ## Goal
@@ -22,7 +22,6 @@ Card description is markdown with a recommended structure.
 ## Scope
 
 ## Definition of Done
-
 - [ ] item
 
 ## Constraints
@@ -31,8 +30,7 @@ Card description is markdown with a recommended structure.
 
 ---
 
-## Final Summary (only when Done)
-
+## Final Summary
 ### What was done
 
 ### Key Decisions
@@ -40,9 +38,13 @@ Card description is markdown with a recommended structure.
 ### Result / Links
 
 ### DoD Check
-
-- [x] item
+- [x] fulfilled item
+- [ ] not yet fulfilled item
 ```
+
+This is the canonical card skeleton for V1.
+
+Protected headings should remain stable so that both humans and agents can use the same template safely.
 
 ## Rules
 
@@ -65,7 +67,7 @@ Card description is markdown with a recommended structure.
 - Goal
 - Context
 - Scope
-- DoD
+- Definition of Done
 - Constraints
 - Plan
 
@@ -86,6 +88,17 @@ Definition of Done should:
 - be explicit
 - be testable where possible
 - guide execution and review
+
+## DoD Check and review gate
+
+Before a card moves from In Review to Done:
+
+- Final Summary must exist
+- DoD Check must be filled or explicitly addressed
+
+DoD Check does not have to be a pure checkbox-only mechanism forever, but in V1 it should function as the visible review checklist for completion.
+
+A reviewer action should not mean only “summary exists”. It should mean the card’s completion criteria have been checked.
 
 ## Relationship to Repo
 
