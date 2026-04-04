@@ -1,5 +1,5 @@
-import type { ContractError, ErrorResponse } from "./errors";
-import type { ProjectPolicy } from "./policy";
+import type { ContractError, ErrorResponse } from "./errors.js";
+import type { ProjectPolicy } from "./policy.js";
 
 export const CardState = {
   New: "New",
@@ -182,7 +182,6 @@ export interface AddCommentRequest {
   cardId: string;
   body: string;
   kind: CommentKindValue;
-  mentions?: string[];
 }
 
 export interface AddCommentResponse {
@@ -205,6 +204,16 @@ export interface InboxItemStatusUpdateRequest {
 
 export interface InboxItemStatusUpdateResponse {
   item: InboxItem;
+}
+
+export interface ClaimReadyCardRequest {
+  cardId: string;
+  revision: number;
+  ownerId: string;
+}
+
+export interface ClaimReadyCardResponse {
+  card: CardDetail;
 }
 
 export interface ApiErrorResponse extends ErrorResponse {

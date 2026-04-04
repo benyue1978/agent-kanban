@@ -16,6 +16,8 @@ import type {
   BoardResponse,
   CardDetail,
   CardListItem,
+  ClaimReadyCardRequest,
+  ClaimReadyCardResponse,
   CreateCardRequest,
   CreateCardResponse,
   ListCardsRequest,
@@ -90,6 +92,37 @@ describe("contracts", () => {
     expect(projectCreateResponse.project.name).toBe("agent-kanban");
     expect(inboxStatusUpdateRequest.status).toBe(InboxItemStatus.Acknowledged);
     expect(inboxStatusUpdateResponse.item.status).toBe(InboxItemStatus.Acknowledged);
+  });
+
+  it("exports the atomic claim contract", () => {
+    const claimRequest: ClaimReadyCardRequest = {
+      cardId: "card-1",
+      revision: 7,
+      ownerId: "collaborator-1",
+    };
+    const claimResponse: ClaimReadyCardResponse = {
+      card: {
+        id: "card-1",
+        projectId: "project-1",
+        title: "Example",
+        state: CardState.InProgress,
+        owner: {
+          id: "collaborator-1",
+          kind: "human",
+          displayName: "Song",
+        },
+        priority: 1,
+        revision: 8,
+        updatedAt: "2026-04-04T00:00:00.000Z",
+        descriptionMd: "# Example",
+        summaryMd: null,
+        comments: [],
+      },
+    };
+
+    expect(claimRequest.ownerId).toBe("collaborator-1");
+    expect(claimResponse.card.state).toBe(CardState.InProgress);
+    expect(claimResponse.card.owner?.id).toBe("collaborator-1");
   });
 
   it("exports shared request and response interfaces", () => {
@@ -224,5 +257,14 @@ describe("contracts", () => {
     expect(projectListResponse.projects[0]?.countsByState[CardState.New]).toBe(1);
 
     expectTypeOf(listCardsResponse).toMatchTypeOf<ListCardsResponse>();
+    expectTypeOf<AddCommentRequest>().not.toHaveProperty("mentions");
+  });
+
+  it("resolves package and subpath exports at runtime", async () => {
+    const root = await import("@agent-kanban/contracts");
+    const card = await import("@agent-kanban/contracts/card");
+
+    expect(root.CardState.Done).toBe("Done");
+    expect(card.CommentKind.Note).toBe("note");
   });
 });
