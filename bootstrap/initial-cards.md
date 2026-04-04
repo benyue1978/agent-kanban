@@ -1,5 +1,7 @@
 # Initial Cards for MVP Backfill
 
+> Historical note: Backfilled into the running system on 2026-04-05. This file remains historical seed input only.
+
 These are draft cards that will be created in the system once the MVP is running.
 
 ## Card 1: Backend Skeleton

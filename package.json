@@ -7,7 +7,7 @@
     "db:up": "docker compose up -d postgres",
     "db:down": "docker compose down",
     "db:reset": "docker compose down -v",
-    "test": "pnpm -r test"
+    "test": "node scripts/run-tests.mjs"
   },
   "devDependencies": {
     "tsx": "^4.20.0",
