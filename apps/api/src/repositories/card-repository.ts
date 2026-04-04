@@ -1,0 +1,174 @@
+import {
+  CardState,
+  type ActorRef,
+  type BoardResponse,
+  type CardDetail,
+  type CardListItem,
+  type ClaimedCardDetail,
+  type CommentRecord,
+} from "@agent-kanban/contracts";
+import { getProtectedSections } from "@agent-kanban/card-markdown";
+import { sortReadyCards } from "@agent-kanban/domain";
+import type { Card, Collaborator, PrismaClient } from "@prisma/client";
+
+interface CreateCardInput {
+  descriptionMd: string;
+  priority?: number | null;
+  projectId: string;
+  title: string;
+}
+
+type CardWithOwner = Card & {
+  owner: Collaborator | null;
+};
+
+type ReadyCardForSorting = Extract<CardListItem, { state: typeof CardState.Ready }> & {
+  readyAt: string;
+};
+
+function toActorRef(collaborator: Collaborator | null): ActorRef | null {
+  if (collaborator === null) {
+    return null;
+  }
+
+  return {
+    id: collaborator.id,
+    kind: collaborator.kind === "agent" ? "agent" : "human",
+    displayName: collaborator.displayName,
+  };
+}
+
+function toCommentRecord(): CommentRecord[] {
+  return [];
+}
+
+function toIsoString(value: Date): string {
+  return value.toISOString();
+}
+
+function getSummaryMarkdown(descriptionMd: string): string | null {
+  return getProtectedSections(descriptionMd).finalSummary ?? null;
+}
+
+function toCardListItem(card: CardWithOwner): CardListItem {
+  const owner = toActorRef(card.owner);
+  const summaryMd = getSummaryMarkdown(card.descriptionMd);
+  const base = {
+    id: card.id,
+    projectId: card.projectId,
+    title: card.title,
+    priority: card.priority,
+    revision: card.revision,
+    updatedAt: toIsoString(card.updatedAt),
+  };
+
+  switch (card.state) {
+    case CardState.New:
+      return { ...base, state: CardState.New, owner, summaryMd: null };
+    case CardState.Ready:
+      return { ...base, state: CardState.Ready, owner, summaryMd: null };
+    case CardState.InProgress:
+      if (owner === null) {
+        throw new Error("In Progress cards must have an owner");
+      }
+      return { ...base, state: CardState.InProgress, owner, summaryMd: null };
+    case CardState.InReview:
+      if (owner === null) {
+        throw new Error("In Review cards must have an owner");
+      }
+      return { ...base, state: CardState.InReview, owner, summaryMd };
+    case CardState.Done:
+      if (summaryMd === null) {
+        throw new Error("Done cards must have a final summary");
+      }
+      return { ...base, state: CardState.Done, owner, summaryMd };
+    default:
+      throw new Error(`Unsupported card state: ${card.state}`);
+  }
+}
+
+function toCardDetail(card: CardWithOwner): CardDetail {
+  return {
+    ...toCardListItem(card),
+    descriptionMd: card.descriptionMd,
+    comments: toCommentRecord(),
+  };
+}
+
+function createEmptyBoard(): BoardResponse {
+  return {
+    columns: {
+      [CardState.New]: { state: CardState.New, cards: [] },
+      [CardState.Ready]: { state: CardState.Ready, cards: [] },
+      [CardState.InProgress]: { state: CardState.InProgress, cards: [] },
+      [CardState.InReview]: { state: CardState.InReview, cards: [] },
+      [CardState.Done]: { state: CardState.Done, cards: [] },
+    },
+  };
+}
+
+export class CardRepository {
+  constructor(private readonly prisma: PrismaClient) {}
+
+  async create(input: CreateCardInput): Promise<CardDetail> {
+    const card = await this.prisma.card.create({
+      data: {
+        projectId: input.projectId,
+        title: input.title,
+        descriptionMd: input.descriptionMd,
+        revision: 1,
+        state: CardState.New,
+        priority: input.priority ?? null,
+      },
+      include: {
+        owner: true,
+      },
+    });
+
+    return toCardDetail(card);
+  }
+
+  async listBoard(projectId: string): Promise<BoardResponse> {
+    const cards = await this.prisma.card.findMany({
+      where: {
+        projectId,
+        archivedAt: null,
+      },
+      include: {
+        owner: true,
+      },
+      orderBy: [{ updatedAt: "asc" }, { createdAt: "asc" }],
+    });
+
+    const board = createEmptyBoard();
+
+    for (const card of cards) {
+      const mapped = toCardListItem(card);
+      board.columns[mapped.state].cards.push(mapped as never);
+    }
+
+    const readyCards = sortReadyCards(
+      board.columns[CardState.Ready].cards.map((card) => ({
+        ...card,
+        readyAt: card.updatedAt,
+      })) as ReadyCardForSorting[]
+    ).map(({ readyAt: _readyAt, ...card }) => card);
+    board.columns[CardState.Ready].cards = readyCards;
+
+    return board;
+  }
+
+  async getClaimedCard(cardId: string): Promise<ClaimedCardDetail | null> {
+    const card = await this.prisma.card.findUnique({
+      where: { id: cardId },
+      include: { owner: true },
+    });
+
+    if (card === null) {
+      return null;
+    }
+
+    const mapped = toCardDetail(card);
+    return mapped.state === CardState.InProgress ? (mapped as ClaimedCardDetail) : null;
+  }
+}

@@ -1,0 +1,22 @@
+{
+  "name": "@agent-kanban/api",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "test": "vitest run",
+    "prisma": "prisma"
+  },
+  "dependencies": {
+    "@agent-kanban/card-markdown": "workspace:*",
+    "@agent-kanban/contracts": "workspace:*",
+    "@agent-kanban/domain": "workspace:*",
+    "@prisma/client": "^6.7.0",
+    "fastify": "^5.3.2"
+  },
+  "devDependencies": {
+    "@types/node": "^24.6.0",
+    "prisma": "^6.7.0"
+  }
+}

@@ -1,0 +1,100 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Project {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  repoUrl     String   @map("repo_url")
+  policyJson  Json     @map("policy_json")
+  createdAt   DateTime @default(now()) @map("created_at")
+  cards       Card[]
+  events      Event[]
+
+  @@map("projects")
+}
+
+model Collaborator {
+  id          String    @id
+  kind        String
+  displayName String?   @map("display_name")
+  createdAt   DateTime  @default(now()) @map("created_at")
+  ownedCards  Card[]
+  comments    Comment[]
+  mentions    CommentMention[]
+  events      Event[]
+
+  @@map("collaborators")
+}
+
+model Card {
+  id            String        @id @default(cuid())
+  projectId     String        @map("project_id")
+  title         String
+  descriptionMd String        @map("description_md")
+  revision      Int
+  state         String
+  ownerId       String?       @map("owner_id")
+  priority      Int?
+  archivedAt    DateTime?     @map("archived_at")
+  createdAt     DateTime      @default(now()) @map("created_at")
+  updatedAt     DateTime      @updatedAt @map("updated_at")
+  project       Project       @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  owner         Collaborator? @relation(fields: [ownerId], references: [id], onDelete: SetNull)
+  comments      Comment[]
+  events        Event[]
+
+  @@index([projectId, state, archivedAt], map: "cards_project_state_archived_idx")
+  @@map("cards")
+}
+
+model Comment {
+  id        String           @id @default(cuid())
+  cardId    String           @map("card_id")
+  authorId  String           @map("author_id")
+  kind      String
+  bodyMd    String           @map("body_md")
+  createdAt DateTime         @default(now()) @map("created_at")
+  card      Card             @relation(fields: [cardId], references: [id], onDelete: Cascade)
+  author    Collaborator     @relation(fields: [authorId], references: [id], onDelete: Restrict)
+  mentions  CommentMention[]
+
+  @@map("comments")
+}
+
+model CommentMention {
+  commentId                String       @map("comment_id")
+  mentionedCollaboratorId  String       @map("mentioned_collaborator_id")
+  status                   String
+  createdAt                DateTime     @default(now()) @map("created_at")
+  updatedAt                DateTime     @updatedAt @map("updated_at")
+  comment                  Comment      @relation(fields: [commentId], references: [id], onDelete: Cascade)
+  collaborator             Collaborator @relation(fields: [mentionedCollaboratorId], references: [id], onDelete: Cascade)
+
+  @@id([commentId, mentionedCollaboratorId])
+  @@index([mentionedCollaboratorId, status], map: "comment_mentions_collaborator_status_idx")
+  @@map("comment_mentions")
+}
+
+model Event {
+  id         String       @id @default(cuid())
+  projectId  String       @map("project_id")
+  cardId     String?      @map("card_id")
+  actorId    String       @map("actor_id")
+  type       String
+  payloadJson Json        @map("payload_json")
+  createdAt  DateTime     @default(now()) @map("created_at")
+  project    Project      @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  card       Card?        @relation(fields: [cardId], references: [id], onDelete: SetNull)
+  actor      Collaborator @relation(fields: [actorId], references: [id], onDelete: Restrict)
+
+  @@index([projectId, createdAt], map: "events_project_created_idx")
+  @@index([cardId, createdAt], map: "events_card_created_idx")
+  @@map("events")
+}
