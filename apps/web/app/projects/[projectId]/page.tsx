@@ -1,6 +1,8 @@
+import Link from "next/link";
 import { BoardColumn } from "@/components/board-column";
 import { Badge } from "@/components/ui/badge";
 import { fetchBoard } from "@/lib/api";
+import { getHumanActorId } from "@/lib/config";
 
 const columnDescriptions = {
   New: "Freshly created cards before they are shaped into reviewable work.",
@@ -17,6 +19,7 @@ export default async function ProjectBoardPage({
 }) {
   const { projectId } = await params;
   const board = await fetchBoard(projectId);
+  const humanActorId = getHumanActorId();
 
   return (
     <main className="mx-auto flex w-full max-w-[1600px] flex-col gap-8 px-4 py-10 md:px-8">
@@ -30,8 +33,18 @@ export default async function ProjectBoardPage({
             The board is the live process surface. Cards keep markdown and timeline context, while the backend remains the only workflow authority.
           </p>
         </div>
-        <div className="rounded-[1.6rem] border border-border/60 bg-white/60 px-4 py-3 text-sm leading-6 text-muted-foreground shadow-[0_20px_60px_-38px_rgba(15,23,42,0.45)] backdrop-blur-xl">
-          Server-rendered from the API with no client-side workflow duplication.
+        <div className="flex flex-col gap-3 rounded-[1.6rem] border border-border/60 bg-white/60 px-4 py-4 text-sm leading-6 text-muted-foreground shadow-[0_20px_60px_-38px_rgba(15,23,42,0.45)] backdrop-blur-xl">
+          <div>Server-rendered from the API with no client-side workflow duplication.</div>
+          {humanActorId === null ? (
+            <div>Set `KANBAN_HUMAN_ACTOR_ID` to enable the human inbox.</div>
+          ) : (
+            <Link
+              href="/inbox"
+              className="inline-flex items-center rounded-full border border-border/70 bg-white/80 px-4 py-2 font-medium text-foreground transition hover:bg-white"
+            >
+              Open {humanActorId} inbox
+            </Link>
+          )}
         </div>
       </section>
 

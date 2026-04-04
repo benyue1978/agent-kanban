@@ -241,6 +241,51 @@ export class CardService {
     });
   }
 
+  async setPriority(
+    cardId: string,
+    revision: number,
+    priority: number | null,
+    actorId?: string
+  ): Promise<CardDetail> {
+    if (priority !== null && (!Number.isInteger(priority) || priority < 1)) {
+      throw new ApiError(400, "invalid_transition", "priority must be a positive integer or null");
+    }
+
+    const existing = await this.prisma.card.findUnique({
+      where: { id: cardId },
+      select: {
+        id: true,
+        ownerId: true,
+        revision: true,
+      },
+    });
+
+    if (existing === null) {
+      throw new ApiError(404, "invalid_transition", "card not found");
+    }
+
+    await resolveActor(this.prisma, actorId, existing.ownerId);
+
+    const updated = await this.prisma.card.updateMany({
+      where: {
+        id: cardId,
+        revision,
+      },
+      data: {
+        priority,
+        revision: {
+          increment: 1,
+        },
+      },
+    });
+
+    if (updated.count === 0) {
+      throw new ApiError(409, "revision_conflict", "stale revision for priority update");
+    }
+
+    return await this.getCard(cardId);
+  }
+
   async updateMarkdown(
     cardId: string,
     revision: number,

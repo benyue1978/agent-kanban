@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { IBM_Plex_Mono, Manrope } from "next/font/google";
+import Link from "next/link";
 import "./globals.css";
 import { cn } from "@/lib/utils";
 
@@ -38,11 +39,17 @@ export default function RootLayout({
                   agent-kanban
                 </span>
               </div>
-              <div className="hidden items-center gap-3 text-sm text-muted-foreground md:flex">
-                <span>Board</span>
-                <span className="text-border">/</span>
-                <span>Card Detail</span>
-              </div>
+              <nav className="hidden items-center gap-3 text-sm text-muted-foreground md:flex">
+                <Link
+                  href="/inbox"
+                  className="rounded-full border border-transparent px-3 py-2 transition hover:border-border/60 hover:bg-white/70 hover:text-foreground"
+                >
+                  Inbox
+                </Link>
+                <span className="rounded-full border border-border/60 bg-white/70 px-3 py-2 font-mono text-[11px] uppercase tracking-[0.22em] text-foreground">
+                  Human Actor
+                </span>
+              </nav>
             </div>
           </header>
           {children}

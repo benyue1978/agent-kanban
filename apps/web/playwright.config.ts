@@ -1,6 +1,7 @@
 import { defineConfig } from "@playwright/test";
 
 export default defineConfig({
+  workers: 1,
   testDir: "./tests",
   use: {
     baseURL: "http://127.0.0.1:3000",
@@ -23,6 +24,7 @@ export default defineConfig({
       cwd: "/Users/song.yue/git/agent-kanban/.worktrees/codex-local-first-mvp-execution/apps/web",
       env: {
         KANBAN_API_URL: "http://127.0.0.1:3001",
+        KANBAN_HUMAN_ACTOR_ID: "human-reviewer",
       },
       port: 3000,
       reuseExistingServer: true,

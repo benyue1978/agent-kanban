@@ -109,4 +109,50 @@ describe.sequential("workflow routes", () => {
     expect(response.statusCode).toBe(409);
     expect(response.json().error.code).toBe("revision_conflict");
   });
+
+  it("updates priority with revision checks", async () => {
+    const app = await buildApp({ prisma });
+
+    const response = await app.inject({
+      method: "POST",
+      url: "/cards/card-2/set-priority",
+      payload: {
+        actorId: "agent-1",
+        revision: 2,
+        priority: 1,
+      },
+    });
+
+    expect(response.statusCode).toBe(200);
+    expect(response.json().card.priority).toBe(1);
+    expect(response.json().card.revision).toBe(3);
+  });
+
+  it("returns revision_conflict when priority is updated twice with the same revision", async () => {
+    const app = await buildApp({ prisma });
+
+    const first = await app.inject({
+      method: "POST",
+      url: "/cards/card-2/set-priority",
+      payload: {
+        actorId: "agent-1",
+        revision: 2,
+        priority: 1,
+      },
+    });
+
+    const second = await app.inject({
+      method: "POST",
+      url: "/cards/card-2/set-priority",
+      payload: {
+        actorId: "agent-1",
+        revision: 2,
+        priority: 2,
+      },
+    });
+
+    expect(first.statusCode).toBe(200);
+    expect(second.statusCode).toBe(409);
+    expect(second.json().error.code).toBe("revision_conflict");
+  });
 });

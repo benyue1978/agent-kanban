@@ -169,6 +169,13 @@ describe("contracts", () => {
       to: CardState.Ready,
       actorId: "collaborator-1",
     };
+    const sendBackStateRequest: SetCardStateRequest = {
+      cardId: "card-1",
+      revision: 1,
+      to: CardState.InProgress,
+      mode: "send_back",
+      actorId: "collaborator-1",
+    };
     const setCardStateResponse: SetCardStateResponse = showCardResponse;
     const assignCardOwnerRequest: AssignCardOwnerRequest = {
       cardId: "card-1",
@@ -272,6 +279,7 @@ describe("contracts", () => {
     expect(updateCardMarkdownRequest.revision).toBe(1);
     expect(updateCardMarkdownResponse.card.descriptionMd).toBe("# Example");
     expect(setCardStateRequest.to).toBe(CardState.Ready);
+    expect(sendBackStateRequest.mode).toBe("send_back");
     expect(setCardStateResponse.card.state).toBe(CardState.New);
     expect(assignCardOwnerRequest.ownerId).toBe("collaborator-1");
     expect(assignCardOwnerResponse.card.owner).toBeNull();

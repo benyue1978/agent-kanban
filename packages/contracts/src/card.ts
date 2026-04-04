@@ -205,14 +205,34 @@ export interface UpdateCardMarkdownResponse {
   card: CardDetail;
 }
 
-export interface SetCardStateRequest {
+interface SetCardStateRequestBase {
   cardId: string;
   revision: number;
-  to: NonClaimCardStateValue;
   actorId?: string;
 }
 
+export type SetCardStateRequest =
+  | (SetCardStateRequestBase & {
+      to: NonClaimCardStateValue;
+      mode?: never;
+    })
+  | (SetCardStateRequestBase & {
+      to: typeof CardState.InProgress;
+      mode: "send_back";
+    });
+
 export interface SetCardStateResponse {
+  card: CardDetail;
+}
+
+export interface SetCardPriorityRequest {
+  cardId: string;
+  revision: number;
+  priority: number | null;
+  actorId?: string;
+}
+
+export interface SetCardPriorityResponse {
   card: CardDetail;
 }
 

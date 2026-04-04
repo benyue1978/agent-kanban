@@ -1,5 +1,6 @@
 import { CardDetail } from "@/components/card-detail";
 import { fetchCard } from "@/lib/api";
+import { getHumanActorId } from "@/lib/config";
 
 export default async function CardPage({
   params,
@@ -8,10 +9,11 @@ export default async function CardPage({
 }) {
   const { cardId } = await params;
   const card = await fetchCard(cardId);
+  const humanActorId = getHumanActorId();
 
   return (
     <main>
-      <CardDetail card={card} />
+      <CardDetail card={card} humanActorId={humanActorId} />
     </main>
   );
 }

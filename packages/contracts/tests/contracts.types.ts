@@ -28,6 +28,14 @@ const setCardStateRequest = {
   actorId: "collaborator-1",
 } satisfies SetCardStateRequest;
 
+const sendBackStateRequest = {
+  cardId: "card-1",
+  revision: 7,
+  to: CardState.InProgress,
+  mode: "send_back",
+  actorId: "collaborator-1",
+} satisfies SetCardStateRequest;
+
 const addCommentRequest = {
   cardId: "card-1",
   authorId: "collaborator-1",
@@ -129,10 +137,10 @@ const validReviewReadCardWithSummary = {
   comments: [],
 } satisfies CardDetail;
 
+// @ts-expect-error Ready -> In Progress must use the explicit send_back mode, not the generic state command.
 const invalidClaimAsStateMutation: SetCardStateRequest = {
   cardId: "card-1",
   revision: 7,
-  // @ts-expect-error Ready -> In Progress must use the atomic claim contract.
   to: CardState.InProgress,
 };
 

@@ -3,6 +3,7 @@ import type {
   AddCommentRequest,
   AppendCardSummaryRequest,
   AssignCardOwnerRequest,
+  SetCardPriorityRequest,
   SetCardStateRequest,
   UpdateCardMarkdownRequest,
 } from "@agent-kanban/contracts";
@@ -35,6 +36,14 @@ export const cardRoutes: FastifyPluginAsync = async (app) => {
     const params = request.params as { id: string };
     const body = request.body as Omit<SetCardStateRequest, "cardId"> & { ownerId?: string };
     return { card: await service.setState(params.id, body) };
+  });
+
+  app.post("/cards/:id/set-priority", async (request) => {
+    const params = request.params as { id: string };
+    const body = request.body as Omit<SetCardPriorityRequest, "cardId">;
+    return {
+      card: await service.setPriority(params.id, body.revision, body.priority, body.actorId),
+    };
   });
 
   app.post("/cards/:id/update-markdown", async (request) => {

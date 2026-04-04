@@ -4,6 +4,7 @@ import remarkGfm from "remark-gfm";
 import { ArrowLeft, CheckCircle2 } from "lucide-react";
 import Link from "next/link";
 import { CommentList } from "@/components/comment-list";
+import { ReviewActions } from "@/components/review-actions";
 import { Badge } from "@/components/ui/badge";
 import {
   Card,
@@ -14,7 +15,13 @@ import {
 } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 
-export function CardDetail({ card }: { card: CardDetailModel }) {
+export function CardDetail({
+  card,
+  humanActorId,
+}: {
+  card: CardDetailModel;
+  humanActorId: string | null;
+}) {
   return (
     <div className="mx-auto flex w-full max-w-6xl flex-col gap-6 px-4 py-10 md:px-8">
       <Link
@@ -30,7 +37,7 @@ export function CardDetail({ card }: { card: CardDetailModel }) {
           <CardHeader className="gap-4 border-b border-border/70 bg-gradient-to-br from-white/70 via-transparent to-primary/5">
             <div className="flex flex-wrap items-center gap-2">
               <Badge variant="outline">{card.id}</Badge>
-              <Badge>{card.state}</Badge>
+              <Badge data-testid="card-state-badge">{card.state}</Badge>
               <Badge variant="secondary">
                 {card.owner === null ? "Unassigned" : `Owner ${card.owner.displayName ?? card.owner.id}`}
               </Badge>
@@ -53,6 +60,8 @@ export function CardDetail({ card }: { card: CardDetailModel }) {
         </Card>
 
         <div className="flex flex-col gap-6">
+          <ReviewActions card={card} humanActorId={humanActorId} />
+
           <Card>
             <CardHeader>
               <CardTitle>Final Summary</CardTitle>
@@ -79,7 +88,7 @@ export function CardDetail({ card }: { card: CardDetailModel }) {
             <CardContent className="flex flex-col gap-4">
               <div className="flex items-center gap-3 rounded-[1.4rem] bg-muted/60 px-4 py-3 text-sm text-muted-foreground">
                 <CheckCircle2 className="size-4 text-primary" />
-                Browser writes stay intentionally limited in this slice; markdown editing remains CLI-first.
+                Browser writes stay intentionally limited in this slice; markdown editing and full ownership control remain CLI-first.
               </div>
               <Separator />
               <CommentList comments={card.comments} />
