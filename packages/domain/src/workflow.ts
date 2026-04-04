@@ -147,6 +147,13 @@ export function canTransition(input: WorkflowTransitionInput): void {
       );
     }
 
+    assertReviewGateAllowed({
+      policy,
+      actorKind: input.actorKind,
+      ownerId: input.ownerId,
+      ...(input.actorId === undefined ? {} : { actorId: input.actorId }),
+    });
+
     return;
   }
 

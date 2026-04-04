@@ -58,6 +58,25 @@ describe("workflow", () => {
     ).toBe("review_gate_not_passed");
   });
 
+  it("rejects agent reopen when policy forbids agent review", () => {
+    expect(
+      getErrorCode(() =>
+        canTransition({
+          from: "In Review",
+          to: "In Progress",
+          actorKind: "agent",
+          actorId: "agent-1",
+          ownerId: "collaborator-1",
+          reviewRationalePresent: true,
+          policy: {
+            ...defaultProjectPolicy,
+            allowAgentReview: false,
+          },
+        })
+      )
+    ).toBe("forbidden_action");
+  });
+
   it("rejects agent pickup of an unassigned Ready card when policy forbids it", () => {
     expect(
       getErrorCode(() =>
@@ -73,7 +92,7 @@ describe("workflow", () => {
     ).toBe("forbidden_action");
   });
 
-  it("rejects self-review when policy forbids it", () => {
+  it("rejects self-review when allowSelfReview is false", () => {
     expect(
       getErrorCode(() =>
         canTransition({
@@ -84,7 +103,11 @@ describe("workflow", () => {
           ownerId: "agent-1",
           reviewGatePassed: true,
           summaryPresent: true,
-          policy: defaultProjectPolicy,
+          policy: {
+            ...defaultProjectPolicy,
+            allowAgentReview: true,
+            allowSelfReview: false,
+          },
         })
       )
     ).toBe("forbidden_action");
