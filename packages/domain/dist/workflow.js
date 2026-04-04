@@ -26,37 +26,14 @@ export function canTransition(input) {
         if (input.requiredSectionsPresent !== true) {
             throwWorkflowError("missing_required_section", "required sections must be present before moving a card to Ready", { from: input.from, to: input.to });
         }
+        if (input.actorKind === "agent" && input.humanInstructionGranted !== true) {
+            throwWorkflowError("forbidden_action", "agents may only move cards to Ready under explicit human instruction", { from: input.from, to: input.to });
+        }
         return;
     }
     if (input.from === CardState.Ready && input.to === CardState.InProgress) {
         const currentOwnerId = input.ownerId ?? null;
-        const targetOwnerId = input.targetOwnerId ?? currentOwnerId ?? (input.actorKind === "agent" ? input.actorId ?? null : null);
-        if (targetOwnerId === null) {
-            throwWorkflowError("missing_owner", "an owner is required to move a ready card into progress", { from: input.from, to: input.to });
-        }
-        if (input.actorKind === "agent") {
-            if (input.actorId === undefined) {
-                throwWorkflowError("forbidden_action", "agents must identify themselves when claiming a ready card", { from: input.from, to: input.to });
-            }
-            if (currentOwnerId === null) {
-                if (!policy.allowAgentPickUnassignedReady) {
-                    throwWorkflowError("forbidden_action", "agents may not pick unassigned ready cards", { from: input.from, to: input.to });
-                }
-            }
-            else if (input.actorId !== currentOwnerId) {
-                throwWorkflowError("forbidden_action", "agents may not start a card already assigned to another owner", {
-                    actorId: input.actorId,
-                    currentOwnerId,
-                    targetOwnerId,
-                });
-            }
-            if (targetOwnerId !== input.actorId) {
-                throwWorkflowError("forbidden_action", "agent claims must resolve to the agent as the target owner", {
-                    actorId: input.actorId,
-                    targetOwnerId,
-                });
-            }
-        }
+        const targetOwnerId = input.targetOwnerId ?? currentOwnerId;
         assertReadyPickupAllowed({
             policy,
             actorKind: input.actorKind,
@@ -72,6 +49,9 @@ export function canTransition(input) {
         }
         if (input.ownerId === null || input.ownerId === undefined) {
             throwWorkflowError("missing_owner", "an owner is required to move a card into review", { from: input.from, to: input.to });
+        }
+        if (input.executionResultPresent !== true) {
+            throwWorkflowError("missing_required_section", "an execution result is required before moving a card into review", { from: input.from, to: input.to });
         }
         if (input.actorKind === "agent" && !isSameActor(input.actorId, input.ownerId)) {
             throwWorkflowError("forbidden_action", "only the current owner may move the card into review", { actorId: input.actorId, ownerId: input.ownerId });
@@ -121,6 +101,9 @@ export function canTransition(input) {
         }
         if (input.summaryPresent !== true) {
             throwWorkflowError("summary_required", "a final summary is required before a card can be completed", { from: input.from, to: input.to });
+        }
+        if (input.dodCheckPresent !== true) {
+            throwWorkflowError("summary_required", "a DoD Check is required before a card can be completed", { from: input.from, to: input.to });
         }
         if (input.reviewGatePassed !== true) {
             throwWorkflowError("review_gate_not_passed", "the review gate must be passed before a card can be completed", { from: input.from, to: input.to });

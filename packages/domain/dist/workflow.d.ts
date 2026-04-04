@@ -7,9 +7,12 @@ export interface WorkflowTransitionInput {
     ownerId?: string | null;
     targetOwnerId?: string | null;
     policy?: ProjectPolicy;
+    humanInstructionGranted?: boolean;
     requiredSectionsPresent?: boolean;
+    executionResultPresent?: boolean;
     reviewGatePassed?: boolean;
     summaryPresent?: boolean;
+    dodCheckPresent?: boolean;
     reviewRationalePresent?: boolean;
 }
 export declare function canTransition(input: WorkflowTransitionInput): void;

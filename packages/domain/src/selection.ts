@@ -33,7 +33,7 @@ function comparePriority(left: number | null, right: number | null): number {
     return -1;
   }
 
-  return right - left;
+  return left - right;
 }
 
 export function sortReadyCards<T extends ReadyCardCandidate>(

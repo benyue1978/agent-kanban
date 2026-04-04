@@ -19,7 +19,7 @@ function comparePriority(left, right) {
     if (right === null) {
         return -1;
     }
-    return right - left;
+    return left - right;
 }
 export function sortReadyCards(cards, policy = defaultProjectPolicy.defaultSelectionPolicy) {
     if (policy !== "priority_then_ready_age_then_updated_at") {

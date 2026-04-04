@@ -15,9 +15,12 @@ export interface WorkflowTransitionInput {
   ownerId?: string | null;
   targetOwnerId?: string | null;
   policy?: ProjectPolicy;
+  humanInstructionGranted?: boolean;
   requiredSectionsPresent?: boolean;
+  executionResultPresent?: boolean;
   reviewGatePassed?: boolean;
   summaryPresent?: boolean;
+  dodCheckPresent?: boolean;
   reviewRationalePresent?: boolean;
 }
 
@@ -66,62 +69,20 @@ export function canTransition(input: WorkflowTransitionInput): void {
       );
     }
 
+    if (input.actorKind === "agent" && input.humanInstructionGranted !== true) {
+      throwWorkflowError(
+        "forbidden_action",
+        "agents may only move cards to Ready under explicit human instruction",
+        { from: input.from, to: input.to }
+      );
+    }
+
     return;
   }
 
   if (input.from === CardState.Ready && input.to === CardState.InProgress) {
     const currentOwnerId = input.ownerId ?? null;
-    const targetOwnerId =
-      input.targetOwnerId ?? currentOwnerId ?? (input.actorKind === "agent" ? input.actorId ?? null : null);
-
-    if (targetOwnerId === null) {
-      throwWorkflowError(
-        "missing_owner",
-        "an owner is required to move a ready card into progress",
-        { from: input.from, to: input.to }
-      );
-    }
-
-    if (input.actorKind === "agent") {
-      if (input.actorId === undefined) {
-        throwWorkflowError(
-          "forbidden_action",
-          "agents must identify themselves when claiming a ready card",
-          { from: input.from, to: input.to }
-        );
-      }
-
-      if (currentOwnerId === null) {
-        if (!policy.allowAgentPickUnassignedReady) {
-          throwWorkflowError(
-            "forbidden_action",
-            "agents may not pick unassigned ready cards",
-            { from: input.from, to: input.to }
-          );
-        }
-      } else if (input.actorId !== currentOwnerId) {
-        throwWorkflowError(
-          "forbidden_action",
-          "agents may not start a card already assigned to another owner",
-          {
-            actorId: input.actorId,
-            currentOwnerId,
-            targetOwnerId,
-          }
-        );
-      }
-
-      if (targetOwnerId !== input.actorId) {
-        throwWorkflowError(
-          "forbidden_action",
-          "agent claims must resolve to the agent as the target owner",
-          {
-            actorId: input.actorId,
-            targetOwnerId,
-          }
-        );
-      }
-    }
+    const targetOwnerId = input.targetOwnerId ?? currentOwnerId;
 
     assertReadyPickupAllowed({
       policy,
@@ -147,6 +108,14 @@ export function canTransition(input: WorkflowTransitionInput): void {
       throwWorkflowError(
         "missing_owner",
         "an owner is required to move a card into review",
+        { from: input.from, to: input.to }
+      );
+    }
+
+    if (input.executionResultPresent !== true) {
+      throwWorkflowError(
+        "missing_required_section",
+        "an execution result is required before moving a card into review",
         { from: input.from, to: input.to }
       );
     }
@@ -245,6 +214,14 @@ export function canTransition(input: WorkflowTransitionInput): void {
       throwWorkflowError(
         "summary_required",
         "a final summary is required before a card can be completed",
+        { from: input.from, to: input.to }
+      );
+    }
+
+    if (input.dodCheckPresent !== true) {
+      throwWorkflowError(
+        "summary_required",
+        "a DoD Check is required before a card can be completed",
         { from: input.from, to: input.to }
       );
     }

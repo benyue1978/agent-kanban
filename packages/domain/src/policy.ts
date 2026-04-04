@@ -70,30 +70,72 @@ export function assertReviewGateAllowed(context: ReviewGatePolicyContext): void 
 export function assertReadyPickupAllowed(context: ReadyPickupPolicyContext): void {
   const policy = resolvePolicy(context.policy);
   const currentOwnerId = context.currentOwnerId ?? null;
-  const targetOwnerId = context.targetOwnerId ?? currentOwnerId;
+  const targetOwnerId = context.targetOwnerId ?? null;
 
-  if (currentOwnerId !== null) {
-    return;
+  if (targetOwnerId === null) {
+    throw new WorkflowDomainError(
+      "missing_owner",
+      "an owner is required to move a ready card into progress",
+      {
+        actorKind: context.actorKind,
+      }
+    );
   }
 
   if (context.actorKind !== "agent") {
     return;
   }
 
-  if (!policy.allowAgentPickUnassignedReady) {
+  if (context.actorId === undefined) {
     throw new WorkflowDomainError(
       "forbidden_action",
-      "agents may not pick unassigned ready cards",
+      "agents must identify themselves when claiming a ready card",
       { actorKind: context.actorKind }
     );
   }
 
-  if (targetOwnerId !== null && targetOwnerId !== context.actorId) {
+  if (currentOwnerId === null) {
+    if (!policy.allowAgentPickUnassignedReady) {
+      throw new WorkflowDomainError(
+        "forbidden_action",
+        "agents may not pick unassigned ready cards",
+        { actorKind: context.actorKind }
+      );
+    }
+
+    if (targetOwnerId !== context.actorId) {
+      throw new WorkflowDomainError(
+        "forbidden_action",
+        "agents may only claim an unassigned ready card for themselves",
+        {
+          actorId: context.actorId,
+          targetOwnerId,
+        }
+      );
+    }
+
+    return;
+  }
+
+  if (context.actorId !== currentOwnerId) {
     throw new WorkflowDomainError(
       "forbidden_action",
-      "agents may only claim an unassigned ready card for themselves",
+      "agents may not start a card already assigned to another owner",
       {
         actorId: context.actorId,
+        currentOwnerId,
+        targetOwnerId,
+      }
+    );
+  }
+
+  if (targetOwnerId !== currentOwnerId) {
+    throw new WorkflowDomainError(
+      "forbidden_action",
+      "agent claims must keep the existing assigned owner",
+      {
+        actorId: context.actorId,
+        currentOwnerId,
         targetOwnerId,
       }
     );

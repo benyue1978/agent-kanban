@@ -1,6 +1,6 @@
 import { defaultProjectPolicy } from "@agent-kanban/contracts";
 import { describe, expect, it } from "vitest";
-import { canTransition, sortReadyCards } from "../src/index.js";
+import { assertReadyPickupAllowed, canTransition, sortReadyCards } from "../src/index.js";
 
 function getErrorCode(thunk: () => void): string {
   try {
@@ -69,6 +69,7 @@ describe("workflow", () => {
           actorId: "human-1",
           reviewGatePassed: false,
           summaryPresent: true,
+          dodCheckPresent: true,
           ownerId: "collaborator-1",
         })
       )
@@ -84,6 +85,7 @@ describe("workflow", () => {
           actorKind: "human",
           actorId: "human-1",
           summaryPresent: true,
+          dodCheckPresent: true,
           ownerId: "collaborator-1",
         })
       )
@@ -197,6 +199,7 @@ describe("workflow", () => {
           actorKind: "agent",
           actorId: "agent-1",
           ownerId: null,
+          targetOwnerId: "agent-1",
           policy: defaultProjectPolicy,
         })
       )
@@ -221,6 +224,23 @@ describe("workflow", () => {
     ).toBe("forbidden_action");
   });
 
+  it("policy helper rejects agent claim of another owner's card", () => {
+    expect(
+      getErrorCode(() =>
+        assertReadyPickupAllowed({
+          actorKind: "agent",
+          actorId: "agent-1",
+          currentOwnerId: "human-1",
+          targetOwnerId: "human-1",
+          policy: {
+            ...defaultProjectPolicy,
+            allowAgentPickUnassignedReady: true,
+          },
+        })
+      )
+    ).toBe("forbidden_action");
+  });
+
   it("rejects omitted required sections before Ready", () => {
     expect(
       getErrorCode(() =>
@@ -233,6 +253,47 @@ describe("workflow", () => {
     ).toBe("missing_required_section");
   });
 
+  it("rejects agent readying a card without explicit human instruction", () => {
+    expect(
+      getErrorCode(() =>
+        canTransition({
+          from: "New",
+          to: "Ready",
+          actorKind: "agent",
+          actorId: "agent-1",
+          requiredSectionsPresent: true,
+        })
+      )
+    ).toBe("forbidden_action");
+  });
+
+  it("rejects review entry when no execution result is recorded", () => {
+    expect(
+      getErrorCode(() =>
+        canTransition({
+          from: "In Progress",
+          to: "In Review",
+          actorKind: "human",
+          actorId: "human-1",
+          ownerId: "human-1",
+        })
+      )
+    ).toBe("missing_required_section");
+  });
+
+  it("allows agent readying a card with explicit human instruction", () => {
+    expect(() =>
+      canTransition({
+        from: "New",
+        to: "Ready",
+        actorKind: "agent",
+        actorId: "agent-1",
+        requiredSectionsPresent: true,
+        humanInstructionGranted: true,
+      })
+    ).not.toThrow();
+  });
+
   it("allows a valid claim from Ready to In Progress", () => {
     expect(() =>
       canTransition({
@@ -241,10 +302,24 @@ describe("workflow", () => {
         actorKind: "agent",
         actorId: "agent-1",
         ownerId: null,
+        targetOwnerId: "agent-1",
         policy: {
           ...defaultProjectPolicy,
           allowAgentPickUnassignedReady: true,
         },
+      })
+    ).not.toThrow();
+  });
+
+  it("allows moving a card into review when an execution result exists", () => {
+    expect(() =>
+      canTransition({
+        from: "In Progress",
+        to: "In Review",
+        actorKind: "human",
+        actorId: "human-1",
+        ownerId: "human-1",
+        executionResultPresent: true,
       })
     ).not.toThrow();
   });
@@ -259,6 +334,7 @@ describe("workflow", () => {
         ownerId: "collaborator-1",
         reviewGatePassed: true,
         summaryPresent: true,
+        dodCheckPresent: true,
       })
     ).not.toThrow();
   });
@@ -297,12 +373,28 @@ describe("workflow", () => {
     ).toBe("forbidden_action");
   });
 
+  it("rejects completion when DoD Check is missing", () => {
+    expect(
+      getErrorCode(() =>
+        canTransition({
+          from: "In Review",
+          to: "Done",
+          actorKind: "human",
+          actorId: "human-1",
+          ownerId: "collaborator-1",
+          reviewGatePassed: true,
+          summaryPresent: true,
+        })
+      )
+    ).toBe("summary_required");
+  });
+
   it("sorts Ready cards by priority then age then updated time", () => {
     const result = sortReadyCards([
       { id: "b", priority: 2, readyAt: 2, updatedAt: 20 },
       { id: "a", priority: 1, readyAt: 1, updatedAt: 10 },
     ]);
 
-    expect(result[0]?.id).toBe("b");
+    expect(result[0]?.id).toBe("a");
   });
 });
