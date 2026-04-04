@@ -1,0 +1,67 @@
+import { BoardColumn } from "@/components/board-column";
+import { Badge } from "@/components/ui/badge";
+import { fetchBoard } from "@/lib/api";
+
+const columnDescriptions = {
+  New: "Freshly created cards before they are shaped into reviewable work.",
+  Ready: "Queued work that can be pulled once scope and DoD are clear.",
+  "In Progress": "Execution lanes owned by the current collaborator.",
+  "In Review": "Human judgment zone for send-back or completion decisions.",
+  Done: "Completed cards with final summaries attached.",
+};
+
+export default async function ProjectBoardPage({
+  params,
+}: {
+  params: Promise<{ projectId: string }>;
+}) {
+  const { projectId } = await params;
+  const board = await fetchBoard(projectId);
+
+  return (
+    <main className="mx-auto flex w-full max-w-[1600px] flex-col gap-8 px-4 py-10 md:px-8">
+      <section className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+        <div className="flex max-w-3xl flex-col gap-3">
+          <Badge variant="outline">Project {projectId}</Badge>
+          <h1 className="max-w-4xl text-balance text-4xl font-semibold tracking-[-0.05em] text-foreground md:text-6xl">
+            Review-oriented workflow visibility for humans and agents.
+          </h1>
+          <p className="max-w-2xl text-base leading-7 text-muted-foreground md:text-lg">
+            The board is the live process surface. Cards keep markdown and timeline context, while the backend remains the only workflow authority.
+          </p>
+        </div>
+        <div className="rounded-[1.6rem] border border-border/60 bg-white/60 px-4 py-3 text-sm leading-6 text-muted-foreground shadow-[0_20px_60px_-38px_rgba(15,23,42,0.45)] backdrop-blur-xl">
+          Server-rendered from the API with no client-side workflow duplication.
+        </div>
+      </section>
+
+      <section className="grid gap-4 xl:grid-cols-5">
+        <BoardColumn
+          state="New"
+          description={columnDescriptions.New}
+          cards={board.columns.New.cards}
+        />
+        <BoardColumn
+          state="Ready"
+          description={columnDescriptions.Ready}
+          cards={board.columns.Ready.cards}
+        />
+        <BoardColumn
+          state="In Progress"
+          description={columnDescriptions["In Progress"]}
+          cards={board.columns["In Progress"].cards}
+        />
+        <BoardColumn
+          state="In Review"
+          description={columnDescriptions["In Review"]}
+          cards={board.columns["In Review"].cards}
+        />
+        <BoardColumn
+          state="Done"
+          description={columnDescriptions.Done}
+          cards={board.columns.Done.cards}
+        />
+      </section>
+    </main>
+  );
+}

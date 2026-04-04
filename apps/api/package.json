@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "build": "tsc -p tsconfig.json",
+    "dev": "tsx src/server.ts",
     "test": "vitest run",
     "prisma": "prisma"
   },
