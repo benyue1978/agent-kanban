@@ -43,6 +43,16 @@ importers:
         specifier: ^6.7.0
         version: 6.19.3(typescript@5.9.3)
 
+  apps/cli:
+    dependencies:
+      '@agent-kanban/contracts':
+        specifier: workspace:*
+        version: link:../../packages/contracts
+    devDependencies:
+      '@types/node':
+        specifier: ^24.6.0
+        version: 24.12.2
+
   packages/card-markdown: {}
 
   packages/contracts: {}
