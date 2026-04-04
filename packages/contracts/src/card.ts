@@ -1,4 +1,5 @@
 import type { ContractError, ErrorResponse } from "./errors";
+import type { ProjectPolicy } from "./policy";
 
 export const CardState = {
   New: "New",
@@ -76,6 +77,14 @@ export interface ProjectListItem {
   countsByState: Record<CardStateValue, number>;
 }
 
+export interface ProjectDetail {
+  id: string;
+  name: string;
+  description: string | null;
+  repoUrl: string;
+  policy: ProjectPolicy;
+}
+
 export interface BoardColumn {
   state: CardStateValue;
   cards: CardListItem[];
@@ -87,6 +96,17 @@ export interface BoardResponse {
 
 export interface ProjectListResponse {
   projects: ProjectListItem[];
+}
+
+export interface ProjectCreateRequest {
+  name: string;
+  description: string | null;
+  repoUrl: string;
+  policy: ProjectPolicy;
+}
+
+export interface ProjectCreateResponse {
+  project: ProjectDetail;
 }
 
 export interface ListCardsRequest {
@@ -176,6 +196,15 @@ export interface ListInboxRequest {
 
 export interface ListInboxResponse {
   items: InboxItem[];
+}
+
+export interface InboxItemStatusUpdateRequest {
+  itemId: string;
+  status: InboxItemStatusValue;
+}
+
+export interface InboxItemStatusUpdateResponse {
+  item: InboxItem;
 }
 
 export interface ApiErrorResponse extends ErrorResponse {

@@ -5,7 +5,7 @@ import {
   InboxItemStatus,
   defaultProjectPolicy,
   errorCodes,
-} from "../src/index";
+} from "@agent-kanban/contracts";
 import type {
   AddCommentRequest,
   AddCommentResponse,
@@ -22,14 +22,18 @@ import type {
   ListCardsResponse,
   ListInboxRequest,
   ListInboxResponse,
+  ProjectCreateRequest,
+  ProjectCreateResponse,
   ProjectListResponse,
+  InboxItemStatusUpdateRequest,
+  InboxItemStatusUpdateResponse,
   SetCardStateRequest,
   SetCardStateResponse,
   ShowCardRequest,
   ShowCardResponse,
   UpdateCardMarkdownRequest,
   UpdateCardMarkdownResponse,
-} from "../src/index";
+} from "@agent-kanban/contracts";
 
 describe("contracts", () => {
   it("exports the canonical workflow states", () => {
@@ -45,6 +49,47 @@ describe("contracts", () => {
 
   it("exports the documented default project policy", () => {
     expect(defaultProjectPolicy.allowAgentReview).toBe(false);
+  });
+
+  it("exports project create and inbox status update contracts", () => {
+    const projectCreateRequest: ProjectCreateRequest = {
+      name: "agent-kanban",
+      description: "AI-native Kanban for humans and agents",
+      repoUrl: "https://example.com/repo.git",
+      policy: {
+        allowAgentReview: false,
+        allowSelfReview: false,
+        allowAgentPickUnassignedReady: false,
+        defaultSelectionPolicy: "priority_then_ready_age_then_updated_at",
+      },
+    };
+    const projectCreateResponse: ProjectCreateResponse = {
+      project: {
+        id: "project-1",
+        name: "agent-kanban",
+        description: "AI-native Kanban for humans and agents",
+        repoUrl: "https://example.com/repo.git",
+        policy: projectCreateRequest.policy,
+      },
+    };
+    const inboxStatusUpdateRequest: InboxItemStatusUpdateRequest = {
+      itemId: "inbox-item-1",
+      status: InboxItemStatus.Acknowledged,
+    };
+    const inboxStatusUpdateResponse: InboxItemStatusUpdateResponse = {
+      item: {
+        id: "inbox-item-1",
+        cardId: "card-1",
+        commentId: "comment-1",
+        status: InboxItemStatus.Acknowledged,
+        createdAt: "2026-04-04T00:00:00.000Z",
+      },
+    };
+
+    expect(projectCreateRequest.repoUrl).toBe("https://example.com/repo.git");
+    expect(projectCreateResponse.project.name).toBe("agent-kanban");
+    expect(inboxStatusUpdateRequest.status).toBe(InboxItemStatus.Acknowledged);
+    expect(inboxStatusUpdateResponse.item.status).toBe(InboxItemStatus.Acknowledged);
   });
 
   it("exports shared request and response interfaces", () => {
