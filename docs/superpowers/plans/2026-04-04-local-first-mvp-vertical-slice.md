@@ -182,6 +182,7 @@ const nodeMajor = Number.parseInt(process.versions.node.split('.')[0] ?? '', 10)
 const pnpmVersion = spawnSync('pnpm', ['-v'], { encoding: 'utf8' });
 const pnpmVersionText = (pnpmVersion.stdout || pnpmVersion.stderr || '').trim();
 const pnpmMajor = Number.parseInt(pnpmVersionText.split('.')[0] ?? '', 10);
+const composeMinMajor = 2;
 
 let failed = false;
 
@@ -206,17 +207,34 @@ if (pnpmVersion.status !== 0 || pnpmVersion.error) {
 
 const checks = [
   ['docker', ['--version']],
-  ['docker', ['compose', 'version']],
   ['psql', ['--version']],
 ];
 
-for (const [cmd, args] of checks) {
-  const result = spawnSync(cmd, args, { encoding: 'utf8' });
+for (const [command, args] of checks) {
+  const result = spawnSync(command, args, { encoding: 'utf8' });
   if (result.status !== 0) {
     failed = true;
-    console.error(`missing:${cmd}`);
+    console.error(`missing:${command}`);
   } else {
-    console.log(`${cmd}: ${result.stdout.trim()}`);
+    console.log(`${command}: ${result.stdout.trim()}`);
+  }
+}
+
+const composeResult = spawnSync('docker', ['compose', 'version'], { encoding: 'utf8' });
+const composeText = (composeResult.stdout || composeResult.stderr || '').trim();
+
+if (composeResult.status !== 0 || composeResult.error) {
+  failed = true;
+  console.error('missing:docker-compose');
+} else {
+  const composeMajorMatch = composeText.match(/v?(\\d+)\\./);
+  const composeMajor = composeMajorMatch ? Number.parseInt(composeMajorMatch[1], 10) : Number.NaN;
+
+  if (!Number.isFinite(composeMajor) || composeMajor < composeMinMajor) {
+    failed = true;
+    console.error(`unsupported:docker-compose:${composeText}`);
+  } else {
+    console.log(`docker compose: ${composeText}`);
   }
 }
 
