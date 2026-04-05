@@ -187,28 +187,33 @@ Start with the repo skill at [skills/agent-kanban/SKILL.md](skills/agent-kanban/
 For plan-driven work, the intended loop is:
 
 1. use superpowers skills to write or approve the spec and implementation plan in the repo
-2. import executable plan tasks into Kanban cards
+2. ask an agent to parse the plan markdown and create cards task-by-task
 3. execute from cards while treating the linked plan/spec docs as planning truth
 
-Plan import is available from the CLI:
+Once the CLI is built, invoke it directly or link it globally:
 
 ```bash
-kanban import-plan --plan docs/superpowers/plans/2026-04-04-local-first-mvp-vertical-slice.md
+node apps/cli/dist/index.js --help
 ```
 
-Once the CLI is built, use `kanban` commands to work against the API:
+Use grouped `kanban` commands to work against the API:
 
 ```bash
-kanban list
-kanban show <card-id>
-kanban create
-kanban assign-owner <card-id> <actor-id>
-kanban set-state <card-id> <state>
-kanban update-card <card-id>
-kanban append-summary <card-id>
-kanban comment <card-id>
-kanban import-plan --plan <plan-path>
+kanban projects list
+kanban projects create
+kanban cards list
+kanban cards show --id <card-id>
+kanban cards create --title "..."
+kanban cards assign-owner --id <card-id> --to <owner-id|none>
+kanban cards set-state --id <card-id> --to ready
+kanban cards update --id <card-id> --file card.md --revision <known_revision>
+kanban cards append-summary --id <card-id> --file summary.md
+kanban cards comment --id <card-id> --body "..." --kind note --author <collaborator-id>
 ```
+
+Card commands infer the current project from the repo `origin` URL when possible. Pass `--project <project-id>` to override inference or to work outside a checked-out project repo.
+
+`kanban projects create` also defaults from the current repo: it uses `git remote get-url origin` for `repoUrl` and derives the project name from the repository name unless you override them with flags.
 
 The CLI supports `--json` output for automation-oriented flows.
 

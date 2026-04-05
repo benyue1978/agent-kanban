@@ -15,7 +15,7 @@ export async function runCli(
 ): Promise<CliResult> {
   const cliEntry = path.resolve(
     path.dirname(fileURLToPath(import.meta.url)),
-    "../dist/src/index.js"
+    "../dist/index.js"
   );
 
   return await new Promise((resolve, reject) => {

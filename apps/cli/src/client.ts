@@ -6,7 +6,8 @@ import type {
   CardDetail,
   CreateCardResponse,
   ErrorResponse,
-  ImportPlanTasksResponse,
+  ProjectCreateResponse,
+  ProjectListResponse,
   SetCardStateResponse,
   ShowCardResponse,
   UpdateCardMarkdownResponse,
@@ -82,6 +83,17 @@ export class ApiClient {
     return this.request<BoardResponse>(`/projects/${projectId}/board`);
   }
 
+  listProjects(): Promise<ProjectListResponse> {
+    return this.request<ProjectListResponse>("/projects");
+  }
+
+  createProject(body: Record<string, unknown>): Promise<ProjectCreateResponse> {
+    return this.request<ProjectCreateResponse>("/projects", {
+      method: "POST",
+      body,
+    });
+  }
+
   getCard(cardId: string): Promise<ShowCardResponse> {
     return this.request<ShowCardResponse>(`/cards/${cardId}`);
   }
@@ -129,13 +141,6 @@ export class ApiClient {
 
   addComment(cardId: string, body: Record<string, unknown>): Promise<AddCommentResponse> {
     return this.request<AddCommentResponse>(`/cards/${cardId}/comments`, {
-      method: "POST",
-      body,
-    });
-  }
-
-  importPlan(projectId: string, body: Record<string, unknown>): Promise<ImportPlanTasksResponse> {
-    return this.request<ImportPlanTasksResponse>(`/projects/${projectId}/import-plan`, {
       method: "POST",
       body,
     });

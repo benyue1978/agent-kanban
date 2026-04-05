@@ -5,6 +5,10 @@ import { CardService } from "../services/card-service.js";
 export const projectRoutes: FastifyPluginAsync = async (app) => {
   const service = new CardService(app.prisma);
 
+  app.get("/projects", async () => {
+    return await service.listProjects();
+  });
+
   app.post("/projects", async (request, reply) => {
     const project = await service.createProject(request.body as Record<string, unknown>);
     return reply.code(201).send({ project });

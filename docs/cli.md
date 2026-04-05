@@ -38,41 +38,45 @@ Recommended conceptual model:
 
 ## Commands
 
+### List projects
+
+`kanban projects list`
+
 ### List cards
 
-`kanban list`
-`kanban list --assigned-to me`
-`kanban list --state Ready`
+`kanban cards list`
+`kanban cards list --assigned-to me`
+`kanban cards list --state ready`
 
 ### Show card
 
-`kanban show --id <card_id>`
+`kanban cards show --id <card_id>`
 
 ### Create card
 
-`kanban create --title "..."`
+`kanban cards create --title "..."`
 
 ### Full markdown update
 
-`kanban show --id 123 > card.md`
+`kanban cards show --id 123 > card.md`
 edit card.md
-`kanban update-card --id 123 --file card.md --revision <known_revision>`
+`kanban cards update --id 123 --file card.md --revision <known_revision>`
 
 ### Structured state update
 
-`kanban set-state --id 123 --to "In Progress"`
+`kanban cards set-state --id 123 --to in-progress --owner <collaborator>`
 
 ### Structured owner assignment
 
-`kanban assign-owner --id 123 --to <collaborator>`
+`kanban cards assign-owner --id 123 --to <collaborator>`
 
 ### Structured summary update
 
-`kanban append-summary --id 123 --file summary.md`
+`kanban cards append-summary --id 123 --file summary.md`
 
 ### Add comment
 
-`kanban comment --id 123 --body "..." --kind progress`
+`kanban cards comment --id 123 --body "..." --kind progress --author <collaborator>`
 
 ## Structured Command Result Contract
 
@@ -99,12 +103,13 @@ Where relevant, responses should include:
 Typical flow:
 
 1. list tasks
-2. pick task
-3. show card
-4. execute work in repo
-5. update card through either full markdown update or structured commands
-6. add comments
-7. move state
+2. pick project if inference is ambiguous
+3. pick task
+4. show card
+5. execute work in repo
+6. update card through either full markdown update or structured commands
+7. add comments
+8. move state
 
 ## Recommended Usage
 

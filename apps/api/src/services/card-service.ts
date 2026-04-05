@@ -15,6 +15,7 @@ import {
   type ImportPlanTasksResponse,
   type ProjectCreateRequest,
   type ProjectDetail,
+  type ProjectListResponse,
   type ProjectPolicy,
 } from "@agent-kanban/contracts";
 import { WorkflowDomainError, canTransition } from "@agent-kanban/domain";
@@ -166,6 +167,12 @@ export class CardService {
       description: input.description ?? null,
       policy: input.policy ?? defaultProjectPolicy,
     });
+  }
+
+  async listProjects(): Promise<ProjectListResponse> {
+    return {
+      projects: await this.projects.list(),
+    };
   }
 
   async importPlanTasks(

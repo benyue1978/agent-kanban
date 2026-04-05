@@ -30,7 +30,7 @@ export async function runCreateCommand({ args, client, env }: CommandContext) {
     actorId: resolveActorId(values, env),
     descriptionMd,
     priority: priorityValue === undefined ? undefined : Number.parseInt(priorityValue, 10),
-    projectId: resolveProjectId(values, env),
+    projectId: await resolveProjectId(values, env, client),
     title,
   });
 }

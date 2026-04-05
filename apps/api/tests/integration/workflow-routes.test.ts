@@ -95,6 +95,23 @@ describe.sequential("workflow routes", () => {
     expect(second.json().error.code).toBe("claim_conflict");
   });
 
+  it("lists projects", async () => {
+    const app = await buildApp({ prisma });
+
+    const response = await app.inject({
+      method: "GET",
+      url: "/projects",
+    });
+
+    expect(response.statusCode).toBe(200);
+    expect(response.json().projects).toHaveLength(1);
+    expect(response.json().projects[0]).toMatchObject({
+      id: "project-1",
+      name: "agent-kanban",
+      repoUrl: "https://example.com/repo.git",
+    });
+  });
+
   it("returns revision_conflict on stale markdown update", async () => {
     const app = await buildApp({ prisma });
 

@@ -48,7 +48,7 @@ An agent should have access to:
 
 - current repo context
 - target `kanban_url`
-- actor identity and auth
+- any explicit collaborator ids needed for actions such as comments or owner assignment
 
 These may come from:
 
@@ -93,12 +93,15 @@ Agents can get work in two ways:
 
 Examples:
 
-`kanban list --assigned-to me`
-`kanban list --state Ready`
+`kanban projects list`
+`kanban cards list --assigned-to me`
+`kanban cards list --state ready`
 
 Unless project policy explicitly allows picking unassigned Ready cards, the agent should not claim arbitrary work on its own.
 
 If project policy allows claiming an unassigned Ready card, the agent should still follow the default selection policy and let backend enforce claim safety.
+
+Card commands infer the current project from the checkout's git `origin` URL when possible. If inference fails or is ambiguous, run `kanban projects list` and retry with `--project <project-id>`.
 
 ## 2. Understanding a Card
 
@@ -132,31 +135,33 @@ Typical agent flow:
 
 If the task came from an approved implementation plan, also inspect any linked `sourceTaskId`, plan path, and spec path on the card before making execution choices.
 
+Do not use a CLI plan-import command. If cards need to be created from a plan markdown file, parse the plan in the agent workflow and create cards task-by-task.
+
 ## 4. Structured Commands
 
 Prefer these commands for critical updates:
 
 ### Set state
 
-`kanban set-state --id 123 --to "In Progress"`
+`kanban cards set-state --id 123 --to in-progress --owner agent-coder`
 
 ### Assign owner
 
-`kanban assign-owner --id 123 --to agent-coder`
+`kanban cards assign-owner --id 123 --to agent-coder`
 
 ### Append summary
 
-`kanban append-summary --id 123 --file summary.md`
+`kanban cards append-summary --id 123 --file summary.md`
 
 ### Add comment
 
-`kanban comment --id 123 --body "..." --kind progress`
+`kanban cards comment --id 123 --body "..." --kind progress --author agent-coder`
 
 Use full markdown roundtrip when editing planning content or larger descriptive sections:
 
-`kanban show --id 123 > card.md`
+`kanban cards show --id 123 > card.md`
 edit locally
-`kanban update-card --id 123 --file card.md --revision <known_revision>`
+`kanban cards update --id 123 --file card.md --revision <known_revision>`
 
 ## 5. Comment Usage
 
@@ -209,6 +214,7 @@ Important constraints:
 - do not move to Done without Final Summary
 - do not move to Done without recorded verification evidence
 - do not assume comments alone are enough for completion
+- use CLI state slugs: `new`, `ready`, `in-progress`, `done`
 - respect backend validation
 
 ## 7. Claiming Work Safely

@@ -1,6 +1,7 @@
 import { CardState, type CardListItem } from "@agent-kanban/contracts";
 import type { CommandContext } from "./common.js";
 import {
+  getOptionalCardStateValue,
   getOptionalStringFlag,
   parseCommandArgs,
   resolveProjectId,
@@ -20,8 +21,8 @@ export async function runListCommand({ args, client, env }: CommandContext) {
     state: { type: "string" },
     "assigned-to": { type: "string" },
   });
-  const projectId = resolveProjectId(values, env);
-  const stateFilter = getOptionalStringFlag(values, "state");
+  const projectId = await resolveProjectId(values, env, client);
+  const stateFilter = getOptionalCardStateValue(values, "state");
   const assignedToValue = getOptionalStringFlag(values, "assigned-to");
   const assignedTo = assignedToValue === "me" ? env.actorId : assignedToValue;
   const board = await client.getBoard(projectId);

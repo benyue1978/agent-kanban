@@ -41,9 +41,9 @@ This is optimistic locking.
 
 ### 1. Full Markdown Roundtrip
 
-`kanban show --id 123 > card.md`
+`kanban cards show --id 123 > card.md`
 edit the file locally
-`kanban update-card --id 123 --file card.md --revision <known_revision>`
+`kanban cards update --id 123 --file card.md --revision <known_revision>`
 
 Use when:
 
@@ -56,19 +56,19 @@ These commands update specific parts of the card safely.
 
 #### set-state
 
-`kanban set-state --id 123 --to "In Progress"`
+`kanban cards set-state --id 123 --to in-progress --owner agent-coder`
 
 #### assign-owner
 
-`kanban assign-owner --id 123 --to agent-coder`
+`kanban cards assign-owner --id 123 --to agent-coder`
 
 #### append-summary
 
-`kanban append-summary --id 123 --file summary.md`
+`kanban cards append-summary --id 123 --file summary.md`
 
 #### add-comment
 
-`kanban comment --id 123 --body "..." --kind progress`
+`kanban cards comment --id 123 --body "..." --kind progress --author agent-coder`
 
 The authoritative command result contract lives in `docs/cli.md`.
 
