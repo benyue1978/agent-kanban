@@ -13,6 +13,8 @@ import { runSetStateCommand } from "./commands/set-state.js";
 import { runShowCommand } from "./commands/show.js";
 import { runUpdateCardCommand } from "./commands/update-card.js";
 
+const defaultApiUrl = "http://127.0.0.1:3001";
+
 function isJsonRequested(args: string[]): boolean {
   return args.includes("--json");
 }
@@ -44,36 +46,68 @@ function printHelp(message: string): void {
   process.stdout.write(`${message}\n`);
 }
 
+function extractGlobalOptions(argv: string[]): {
+  args: string[];
+  apiUrl?: string;
+} {
+  const args: string[] = [];
+  let apiUrl: string | undefined;
+
+  for (let index = 0; index < argv.length; index += 1) {
+    const current = argv[index];
+
+    if (current === undefined) {
+      continue;
+    }
+
+    if (current === "--api-url") {
+      const value = argv[index + 1];
+
+      if (value === undefined || value.startsWith("--")) {
+        throw new Error("missing required value for --api-url");
+      }
+
+      apiUrl = value;
+      index += 1;
+      continue;
+    }
+
+    args.push(current);
+  }
+
+  return { args, ...(apiUrl === undefined ? {} : { apiUrl }) };
+}
+
 function topLevelHelp(): string {
   return `Usage:
-  kanban projects list [--json]
-  kanban projects create [--name <name>] [--repo-url <url>] [--description <text>] [--policy-file <path>] [--json]
-  kanban cards list [--project <id>] [--state <new|ready|in-progress|done>] [--assigned-to <id>] [--json]
-  kanban cards show --id <card-id> [--json]
-  kanban cards create [--project <id>] --title <title> [--description-file <path>] [--priority <n>] [--actor <id>] [--json]
-  kanban cards assign-owner --id <card-id> --to <owner-id|none> [--actor <id>] [--json]
-  kanban cards set-state --id <card-id> --to <new|ready|in-progress|done> [--owner <owner-id>] [--actor <id>] [--json]
-  kanban cards update --id <card-id> --file <path> --revision <n> [--actor <id>] [--json]
-  kanban cards append-summary --id <card-id> --file <path> [--actor <id>] [--json]
-  kanban cards comment --id <card-id> --body <text> --kind <progress|question|decision|note|verification> [--author <id>] [--json]`;
+  kanban [--api-url <url>] projects list [--json]
+  kanban [--api-url <url>] projects create [--name <name>] [--repo-url <url>] [--description <text>] [--policy-file <path>] [--json]
+  kanban [--api-url <url>] cards list [--project <id>] [--state <new|ready|in-progress|done>] [--assigned-to <id>] [--json]
+  kanban [--api-url <url>] cards show --id <card-id> [--json]
+  kanban [--api-url <url>] cards create [--project <id>] --title <title> [--description-file <path>] [--priority <n>] [--actor <id>] [--json]
+  kanban [--api-url <url>] cards assign-owner --id <card-id> --to <owner-id|none> [--actor <id>] [--json]
+  kanban [--api-url <url>] cards set-state --id <card-id> --to <new|ready|in-progress|done> [--owner <owner-id>] [--actor <id>] [--json]
+  kanban [--api-url <url>] cards update --id <card-id> --file <path> --revision <n> [--actor <id>] [--json]
+  kanban [--api-url <url>] cards append-summary --id <card-id> --file <path> [--actor <id>] [--json]
+  kanban [--api-url <url>] cards comment --id <card-id> --body <text> --kind <progress|question|decision|note|verification> [--author <id>] [--json]`;
 }
 
 function projectsHelp(): string {
   return `Usage:
-  kanban projects list [--json]
-  kanban projects create [--name <name>] [--repo-url <url>] [--description <text>] [--policy-file <path>] [--json]`;
+  kanban [--api-url <url>] projects list [--json]
+  kanban [--api-url <url>] projects create [--name <name>] [--repo-url <url>] [--description <text>] [--policy-file <path>] [--json]`;
 }
 
 function cardsHelp(): string {
   return `Usage:
-  kanban cards list [--project <id>] [--state <new|ready|in-progress|done>] [--assigned-to <id>] [--json]
-  kanban cards show --id <card-id> [--json]
-  kanban cards create [--project <id>] --title <title> [--description-file <path>] [--priority <n>] [--actor <id>] [--json]
-  kanban cards assign-owner --id <card-id> --to <owner-id|none> [--actor <id>] [--json]
-  kanban cards set-state --id <card-id> --to <new|ready|in-progress|done> [--owner <owner-id>] [--actor <id>] [--json]
-  kanban cards update --id <card-id> --file <path> --revision <n> [--actor <id>] [--json]
-  kanban cards append-summary --id <card-id> --file <path> [--actor <id>] [--json]
-  kanban cards comment --id <card-id> --body <text> --kind <progress|question|decision|note|verification> [--author <id>] [--json]`;
+  kanban [--api-url <url>] cards list [--project <id>] [--state <new|ready|in-progress|done>] [--assigned-to <id>] [--json]
+  kanban [--api-url <url>] cards show --id <card-id> [--json]
+  kanban [--api-url <url>] cards create [--project <id>] --title <title> [--description-file <path>] [--priority <n>] [--actor <id>] [--json]
+  kanban [--api-url <url>] cards assign-owner --id <card-id> --to <owner-id|none> [--actor <id>] [--json]
+  kanban [--api-url <url>] cards set-state --id <card-id> --to <new|ready|in-progress|done> [--owner <owner-id>] [--actor <id>] [--json]
+  kanban [--api-url <url>] cards update --id <card-id> --file <path> --revision <n> [--actor <id>] [--json]
+  kanban [--api-url <url>] cards append-summary --id <card-id> --file <path> [--actor <id>] [--json]
+  kanban [--api-url <url>] cards comment --id <card-id> --body <text> --kind <progress|question|decision|note|verification> [--author <id>] [--json]`;
 }
 
 async function dispatchCommand(
@@ -82,11 +116,7 @@ async function dispatchCommand(
   args: string[],
   env: CommandEnvironment
 ): Promise<unknown> {
-  if (env.apiUrl === undefined) {
-    throw new Error("KANBAN_API_URL is required");
-  }
-
-  const client = new ApiClient(env.apiUrl);
+  const client = new ApiClient(env.apiUrl ?? defaultApiUrl);
   const context = { args, client, env };
 
   if (resource === "projects") {
@@ -121,8 +151,11 @@ async function dispatchCommand(
 }
 
 async function main(): Promise<void> {
-  const [resource, action, ...args] = process.argv.slice(2);
-  const json = isJsonRequested([resource, action, ...args].filter((value): value is string => value !== undefined));
+  const globalOptions = extractGlobalOptions(process.argv.slice(2));
+  const [resource, action, ...args] = globalOptions.args;
+  const json = isJsonRequested(
+    [resource, action, ...args].filter((value): value is string => value !== undefined)
+  );
 
   if (resource === undefined || resource === "--help") {
     printHelp(topLevelHelp());
@@ -143,9 +176,10 @@ async function main(): Promise<void> {
     ...(process.env.KANBAN_ACTOR_ID === undefined
       ? {}
       : { actorId: process.env.KANBAN_ACTOR_ID }),
+    ...(globalOptions.apiUrl === undefined ? {} : { apiUrl: globalOptions.apiUrl }),
     ...(process.env.KANBAN_API_URL === undefined
       ? {}
-      : { apiUrl: process.env.KANBAN_API_URL }),
+      : { apiUrl: globalOptions.apiUrl ?? process.env.KANBAN_API_URL }),
   };
 
   try {

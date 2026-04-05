@@ -264,6 +264,19 @@ After that, use the global command:
 kanban --help
 ```
 
+The CLI resolves its API endpoint in this order:
+
+- `--api-url <url>`
+- `KANBAN_API_URL`
+- default `http://127.0.0.1:3001`
+
+That means the production-like local stack works with no extra shell setup, while the dev stack can be targeted explicitly:
+
+```bash
+kanban projects list
+kanban --api-url http://127.0.0.1:3101 projects list
+```
+
 If you do not want a global install, invoke the built CLI directly:
 
 ```bash

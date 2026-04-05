@@ -157,6 +157,18 @@ describe("cli", () => {
     expect(JSON.parse(result.stdout)).toHaveProperty("projects");
   });
 
+  it("uses --api-url without requiring KANBAN_API_URL and lets the flag override the env var", async () => {
+    const result = await runCli(
+      ["--api-url", serverUrl, "projects", "list", "--json"],
+      {
+        KANBAN_API_URL: "http://127.0.0.1:1",
+      }
+    );
+
+    expect(result.exitCode).toBe(0);
+    expect(JSON.parse(result.stdout)).toHaveProperty("projects");
+  });
+
   it("infers repo url and default name when creating a project from a repo checkout", async () => {
     server.removeAllListeners("request");
     server.on("request", (request, response) => {
