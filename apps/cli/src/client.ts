@@ -6,6 +6,7 @@ import type {
   CardDetail,
   CreateCardResponse,
   ErrorResponse,
+  ImportPlanTasksResponse,
   SetCardStateResponse,
   ShowCardResponse,
   UpdateCardMarkdownResponse,
@@ -128,6 +129,13 @@ export class ApiClient {
 
   addComment(cardId: string, body: Record<string, unknown>): Promise<AddCommentResponse> {
     return this.request<AddCommentResponse>(`/cards/${cardId}/comments`, {
+      method: "POST",
+      body,
+    });
+  }
+
+  importPlan(projectId: string, body: Record<string, unknown>): Promise<ImportPlanTasksResponse> {
+    return this.request<ImportPlanTasksResponse>(`/projects/${projectId}/import-plan`, {
       method: "POST",
       body,
     });

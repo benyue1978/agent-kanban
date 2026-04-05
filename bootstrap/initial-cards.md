@@ -41,7 +41,7 @@ Support reading a card as markdown, editing it, and writing it back.
 
 ### Goal
 Implement the lifecycle:
-New → Ready → In Progress → In Review → Done
+New → Ready → In Progress → Done
 
 ### Definition of Done
 - transition rules exist

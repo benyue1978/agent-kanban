@@ -60,7 +60,6 @@ It should provide enough context for a collaborator, especially an agent, to car
 - New
 - Ready
 - In Progress
-- In Review
 - Done
 
 ### State semantics
@@ -68,15 +67,13 @@ It should provide enough context for a collaborator, especially an agent, to car
 - **New**: idea, rough requirement, or task under discussion
 - **Ready**: sufficiently defined for implementation or research execution
 - **In Progress**: someone is actively working on it
-- **In Review**: work is done and waiting for review gate
-- **Done**: work is completed and summarized
+- **Done**: work is completed, summarized, and backed by verification evidence
 
 ### State rules
 
 - In Progress should have an owner
-- In Review should have an owner
-- In Review to Done is a gate
 - Before Done, card must contain a final summary
+- Before Done, card must have verification evidence
 
 ## Collaborator
 
@@ -85,7 +82,7 @@ There are only two collaborator types in V1:
 - human
 - agent
 
-The system does not introduce additional first-class actor roles such as reviewer. Review is modeled as an allowed action under workflow and project policy.
+The system does not introduce additional first-class actor roles such as reviewer. Review is modeled as evidence on the card timeline plus completion rules.
 
 ### Properties
 

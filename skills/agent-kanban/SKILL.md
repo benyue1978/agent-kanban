@@ -35,6 +35,13 @@ An agent session should understand three different things:
 
 The agent usually works inside a local clone or worktree, but the project itself is identified by logical repo identity rather than a machine-specific path.
 
+For the local-first default repo setup:
+
+- `pnpm start` builds the local CLI and starts `postgres`, `api`, and `web`
+- the web UI is typically at `http://127.0.0.1:3000`
+- the API is typically at `http://127.0.0.1:3001`
+- the agent CLI runs on the host against that API endpoint
+
 ## Connection Assumptions
 
 An agent should have access to:
@@ -120,7 +127,10 @@ Typical agent flow:
 5. perform work in repo
 6. leave progress comments
 7. update summary
-8. move card through workflow
+8. add verification evidence when the task is complete enough
+9. move card through workflow
+
+If the task came from an approved implementation plan, also inspect any linked `sourceTaskId`, plan path, and spec path on the card before making execution choices.
 
 ## 4. Structured Commands
 
@@ -191,12 +201,13 @@ If a decision materially affects final understanding of the work, it should also
 
 Cards move through:
 
-New → Ready → In Progress → In Review → Done
+New → Ready → In Progress → Done
 
 Important constraints:
 
 - do not move to In Progress without an owner
 - do not move to Done without Final Summary
+- do not move to Done without recorded verification evidence
 - do not assume comments alone are enough for completion
 - respect backend validation
 
@@ -223,7 +234,6 @@ Common error types may include:
 - `invalid_transition`
 - `missing_owner`
 - `missing_required_section`
-- `review_gate_not_passed`
 - `summary_required`
 - `forbidden_action`
 - `revision_conflict`
@@ -248,17 +258,12 @@ Common error types may include:
 - update the missing section explicitly
 - do not try to bypass workflow rules
 
-#### On `review_gate_not_passed`
-
-- inspect comments and review rationale
-- return card to active work if needed
-
 ## 9. Final Summary (Critical)
 
 Before moving a card to Done:
 
 - ensure Final Summary exists
-- ensure DoD Check is filled or explicitly addressed
+- ensure verification evidence is present on the card timeline
 - include key decisions if they matter for result interpretation
 - link to relevant repo artifacts
 
@@ -267,7 +272,7 @@ Final Summary should answer:
 - what was done
 - what important decisions were made
 - where the relevant artifacts live
-- how DoD was satisfied
+- how completion was verified
 
 ## 10. Anti-patterns
 

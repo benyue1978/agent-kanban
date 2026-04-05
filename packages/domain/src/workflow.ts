@@ -5,7 +5,7 @@ import {
   type ErrorCode,
   type ProjectPolicy,
 } from "@agent-kanban/contracts";
-import { assertReadyPickupAllowed, assertReviewGateAllowed, WorkflowDomainError } from "./policy.js";
+import { assertReadyPickupAllowed, WorkflowDomainError } from "./policy.js";
 
 export interface WorkflowTransitionInput {
   from: CardStateValue;
@@ -18,19 +18,14 @@ export interface WorkflowTransitionInput {
   policy?: ProjectPolicy;
   humanInstructionGranted?: boolean;
   requiredSectionsPresent?: boolean;
-  executionResultPresent?: boolean;
-  reviewGatePassed?: boolean;
   summaryPresent?: boolean;
-  dodCheckPresent?: boolean;
-  reviewRationalePresent?: boolean;
+  verificationEvidencePresent?: boolean;
 }
 
 const allowedTransitions = new Set<string>([
   `${CardState.New}=>${CardState.Ready}`,
   `${CardState.Ready}=>${CardState.InProgress}`,
-  `${CardState.InProgress}=>${CardState.InReview}`,
-  `${CardState.InReview}=>${CardState.Done}`,
-  `${CardState.InReview}=>${CardState.InProgress}`,
+  `${CardState.InProgress}=>${CardState.Done}`,
 ]);
 
 function throwWorkflowError(
@@ -43,10 +38,6 @@ function throwWorkflowError(
 
 function resolvePolicy(policy?: ProjectPolicy): ProjectPolicy {
   return policy ?? defaultProjectPolicy;
-}
-
-function isSameActor(actorId: string | undefined, ownerId: string | null | undefined): boolean {
-  return actorId !== undefined && ownerId !== undefined && ownerId !== null && actorId === ownerId;
 }
 
 export function canTransition(input: WorkflowTransitionInput): void {
@@ -107,117 +98,11 @@ export function canTransition(input: WorkflowTransitionInput): void {
     return;
   }
 
-  if (input.from === CardState.InProgress && input.to === CardState.InReview) {
-    if (input.actorId === undefined) {
-      throwWorkflowError(
-        "forbidden_action",
-        "review transitions require reviewer identity",
-        { from: input.from, to: input.to }
-      );
-    }
-
+  if (input.from === CardState.InProgress && input.to === CardState.Done) {
     if (input.ownerId === null || input.ownerId === undefined) {
       throwWorkflowError(
         "missing_owner",
-        "an owner is required to move a card into review",
-        { from: input.from, to: input.to }
-      );
-    }
-
-    if (input.actorKind === "agent" && !isSameActor(input.actorId, input.ownerId)) {
-      throwWorkflowError(
-        "forbidden_action",
-        "only the current owner may move the card into review",
-        { actorId: input.actorId, ownerId: input.ownerId }
-      );
-    }
-
-    if (input.executionResultPresent !== true) {
-      throwWorkflowError(
-        "missing_required_section",
-        "an execution result is required before moving a card into review",
-        { from: input.from, to: input.to }
-      );
-    }
-
-    return;
-  }
-
-  if (input.from === CardState.InReview && input.to === CardState.InProgress) {
-    if (input.actorId === undefined) {
-      throwWorkflowError(
-        "forbidden_action",
-        "review transitions require reviewer identity",
-        { from: input.from, to: input.to }
-      );
-    }
-
-    if (input.actorKind === "agent" && !policy.allowAgentReview) {
-      throwWorkflowError(
-        "forbidden_action",
-        "agents are not allowed to reopen cards from review",
-        { from: input.from, to: input.to }
-      );
-    }
-
-    if (input.actorId !== undefined && input.ownerId !== undefined && input.ownerId !== null) {
-      assertReviewGateAllowed({
-        policy,
-        actorKind: input.actorKind,
-        ownerId: input.ownerId,
-        actorId: input.actorId,
-      });
-    }
-
-    if (input.ownerId === null || input.ownerId === undefined) {
-      throwWorkflowError(
-        "missing_owner",
-        "a card in review must have an owner before it can be reopened",
-        { from: input.from, to: input.to }
-      );
-    }
-
-    if (input.reviewRationalePresent !== true) {
-      throwWorkflowError(
-        "missing_required_section",
-        "review rationale is required before reopening a card",
-        { from: input.from, to: input.to }
-      );
-    }
-
-    return;
-  }
-
-  if (input.from === CardState.InReview && input.to === CardState.Done) {
-    if (input.actorId === undefined) {
-      throwWorkflowError(
-        "forbidden_action",
-        "review transitions require reviewer identity",
-        { from: input.from, to: input.to }
-      );
-    }
-
-    if (input.actorKind === "agent" && !policy.allowAgentReview) {
-      throwWorkflowError(
-        "forbidden_action",
-        "agents are not allowed to complete review",
-        { from: input.from, to: input.to }
-      );
-    }
-
-    if (input.ownerId !== undefined && input.ownerId !== null) {
-      assertReviewGateAllowed({
-        policy,
-        actorKind: input.actorKind,
-        ownerId: input.ownerId,
-        actorId: input.actorId,
-      });
-    }
-
-    if (input.ownerId === null || input.ownerId === undefined) {
-      throwWorkflowError(
-        "missing_owner",
-        "a card in review must have an owner before it can be completed",
+        "an owner is required before a card can be completed",
         { from: input.from, to: input.to }
       );
     }
@@ -230,18 +115,10 @@ export function canTransition(input: WorkflowTransitionInput): void {
       );
     }
 
-    if (input.dodCheckPresent !== true) {
+    if (input.verificationEvidencePresent !== true) {
       throwWorkflowError(
-        "summary_required",
-        "a DoD Check is required before a card can be completed",
-        { from: input.from, to: input.to }
-      );
-    }
-
-    if (input.reviewGatePassed !== true) {
-      throwWorkflowError(
-        "review_gate_not_passed",
-        "the review gate must be passed before a card can be completed",
+        "missing_required_section",
+        "verification evidence is required before a card can be completed",
         { from: input.from, to: input.to }
       );
     }

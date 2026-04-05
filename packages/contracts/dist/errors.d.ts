@@ -1,4 +1,4 @@
-export declare const errorCodes: readonly ["invalid_transition", "missing_owner", "missing_required_section", "review_gate_not_passed", "summary_required", "forbidden_action", "revision_conflict", "claim_conflict"];
+export declare const errorCodes: readonly ["invalid_transition", "missing_owner", "missing_required_section", "summary_required", "forbidden_action", "revision_conflict", "claim_conflict"];
 export type ErrorCode = (typeof errorCodes)[number];
 export interface ContractError {
     code: ErrorCode;

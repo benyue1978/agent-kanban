@@ -82,14 +82,25 @@ export function CardDetail({
 
           <Card>
             <CardHeader>
-              <CardTitle>Review Context</CardTitle>
-              <CardDescription>Timeline notes that matter for inspection.</CardDescription>
+              <CardTitle>Execution Context</CardTitle>
+              <CardDescription>Timeline notes, verification evidence, and source links.</CardDescription>
             </CardHeader>
             <CardContent className="flex flex-col gap-4">
               <div className="flex items-center gap-3 rounded-[1.4rem] bg-muted/60 px-4 py-3 text-sm text-muted-foreground">
                 <CheckCircle2 className="size-4 text-primary" />
-                Browser writes stay intentionally limited in this slice; markdown editing and full ownership control remain CLI-first.
+                Browser writes stay intentionally limited in this slice; markdown editing and richer planning changes remain CLI-first.
               </div>
+              {card.sourceTaskId === null ? null : (
+                <>
+                  <Separator />
+                  <div className="rounded-[1.2rem] border border-border/70 bg-background/80 px-4 py-4 text-sm leading-6 text-muted-foreground">
+                    <div className="font-medium text-foreground">Imported task linkage</div>
+                    <div>Task: {card.sourceTaskId}</div>
+                    {card.sourcePlanPath === null ? null : <div>Plan: {card.sourcePlanPath}</div>}
+                    {card.sourceSpecPath === null ? null : <div>Spec: {card.sourceSpecPath}</div>}
+                  </div>
+                </>
+              )}
               <Separator />
               <CommentList comments={card.comments} />
             </CardContent>

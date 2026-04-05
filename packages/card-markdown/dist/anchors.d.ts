@@ -11,6 +11,11 @@ export interface ProtectedSections {
     finalSummaryResultLinks?: string;
     finalSummaryDodCheck?: string;
 }
+export interface SourceTaskMetadata {
+    taskId: string;
+    planPath: string;
+    specPath: string | null;
+}
 interface HeadingBlock {
     bodyStart: number;
     content: string;
@@ -19,5 +24,7 @@ interface HeadingBlock {
 }
 export declare function findProtectedSection(markdown: string, heading: string): HeadingBlock | undefined;
 export declare function getProtectedSections(markdown: string): ProtectedSections;
+export declare function getSourceTaskMetadata(markdown: string): SourceTaskMetadata | null;
+export declare function upsertSourceTaskMetadata(markdown: string, metadata: SourceTaskMetadata): string;
 export {};
 //# sourceMappingURL=anchors.d.ts.map

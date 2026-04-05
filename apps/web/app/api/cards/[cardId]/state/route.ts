@@ -27,7 +27,6 @@ export async function POST(
   }
 
   const body = await readBody<{
-    mode?: "send_back";
     ownerId?: string;
     revision: number;
     to: string;

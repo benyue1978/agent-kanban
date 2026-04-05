@@ -12,13 +12,6 @@ export class WorkflowDomainError extends Error {
   }
 }
 
-export interface ReviewGatePolicyContext {
-  policy?: ProjectPolicy;
-  actorKind: "human" | "agent";
-  actorId?: string;
-  ownerId?: string | null;
-}
-
 export interface ReadyPickupPolicyContext {
   policy?: ProjectPolicy;
   actorKind: "human" | "agent";
@@ -30,42 +23,6 @@ export interface ReadyPickupPolicyContext {
 
 function resolvePolicy(policy?: ProjectPolicy): ProjectPolicy {
   return policy ?? defaultProjectPolicy;
-}
-
-function isSelfReview(actorId: string | undefined, ownerId: string | null | undefined): boolean {
-  return actorId !== undefined && ownerId !== undefined && ownerId !== null && actorId === ownerId;
-}
-
-export function assertReviewGateAllowed(context: ReviewGatePolicyContext): void {
-  const policy = resolvePolicy(context.policy);
-
-  if (context.actorKind === "agent") {
-    if (!policy.allowAgentReview) {
-      throw new WorkflowDomainError(
-        "forbidden_action",
-        "agents are not allowed to pass the review gate",
-        { actorKind: context.actorKind }
-      );
-    }
-
-    if (isSelfReview(context.actorId, context.ownerId) && !policy.allowSelfReview) {
-      throw new WorkflowDomainError(
-        "forbidden_action",
-        "self review is not allowed",
-        { actorId: context.actorId, ownerId: context.ownerId }
-      );
-    }
-
-    return;
-  }
-
-  if (isSelfReview(context.actorId, context.ownerId) && !policy.allowSelfReview) {
-    throw new WorkflowDomainError(
-      "forbidden_action",
-      "self review is not allowed",
-      { actorId: context.actorId, ownerId: context.ownerId }
-    );
-  }
 }
 
 export function assertReadyPickupAllowed(context: ReadyPickupPolicyContext): void {

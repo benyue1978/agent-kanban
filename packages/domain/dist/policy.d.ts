@@ -4,12 +4,6 @@ export declare class WorkflowDomainError extends Error {
     readonly details: Record<string, unknown> | undefined;
     constructor(code: ErrorCode, message: string, details?: Record<string, unknown>);
 }
-export interface ReviewGatePolicyContext {
-    policy?: ProjectPolicy;
-    actorKind: "human" | "agent";
-    actorId?: string;
-    ownerId?: string | null;
-}
 export interface ReadyPickupPolicyContext {
     policy?: ProjectPolicy;
     actorKind: "human" | "agent";
@@ -18,6 +12,5 @@ export interface ReadyPickupPolicyContext {
     targetOwnerId?: string | null;
     humanInstructionGranted?: boolean;
 }
-export declare function assertReviewGateAllowed(context: ReviewGatePolicyContext): void;
 export declare function assertReadyPickupAllowed(context: ReadyPickupPolicyContext): void;
 //# sourceMappingURL=policy.d.ts.map

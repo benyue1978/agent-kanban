@@ -8,26 +8,6 @@ The goal is to avoid hidden behavior or duplicated defaults across implementatio
 
 ## Minimal Policy Fields
 
-### allow_agent_review
-
-Type:
-
-- boolean
-
-Meaning:
-
-- whether an agent is allowed to pass the In Review → Done gate
-
-### allow_self_review
-
-Type:
-
-- boolean
-
-Meaning:
-
-- whether the same actor that owns or executed the card is allowed to pass the review gate
-
 ### allow_agent_pick_unassigned_ready
 
 Type:
@@ -70,16 +50,12 @@ A V1 policy may represent transition actors conceptually like this:
 
 - `new_to_ready: [human, agent_if_explicit_human_instruction]`
 - `ready_to_in_progress: [human, owner, agent_if_policy_allows_pick]`
-- `in_progress_to_in_review: [owner, human]`
-- `in_review_to_done: [human, agent_if_allow_agent_review]`
-- `in_review_to_in_progress: [human, agent_if_allow_agent_review]`
+- `in_progress_to_done: [owner_or_human_if_summary_and_verification_present]`
 
 The exact implementation can vary, but the meaning should remain consistent.
 
 ## Recommended Defaults for V1
 
-- `allow_agent_review = false`
-- `allow_self_review = false`
 - `allow_agent_pick_unassigned_ready = false`
 - `default_selection_policy = priority_then_ready_age_then_updated_at`
 

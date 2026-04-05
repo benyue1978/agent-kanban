@@ -1,5 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { createServer, type Server } from "node:http";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 import { runCli } from "./run-cli.js";
 
 describe("cli", () => {
@@ -20,6 +22,9 @@ describe("cli", () => {
                   {
                     id: "card-1",
                     projectId: "project-1",
+                    sourcePlanPath: null,
+                    sourceSpecPath: null,
+                    sourceTaskId: null,
                     title: "Backend skeleton",
                     state: "Ready",
                     owner: null,
@@ -31,7 +36,6 @@ describe("cli", () => {
                 ],
               },
               "In Progress": { state: "In Progress", cards: [] },
-              "In Review": { state: "In Review", cards: [] },
               Done: { state: "Done", cards: [] },
             },
           })
@@ -100,5 +104,54 @@ describe("cli", () => {
 
     expect(result.exitCode).toBe(1);
     expect(JSON.parse(result.stderr).error.code).toBeDefined();
+  });
+
+  it("parses plan tasks and sends them to the import endpoint", async () => {
+    server.removeAllListeners("request");
+    server.on("request", (request, response) => {
+      if (request.url === "/projects/project-1/import-plan" && request.method === "POST") {
+        let body = "";
+        request.on("data", (chunk) => {
+          body += String(chunk);
+        });
+        request.on("end", () => {
+          const payload = JSON.parse(body) as { tasks: Array<{ sourceTaskId: string }> };
+          response.writeHead(200, { "content-type": "application/json" });
+          response.end(
+            JSON.stringify({
+              results: payload.tasks.map((task) => ({
+                cardId: `card-for-${task.sourceTaskId}`,
+                sourceTaskId: task.sourceTaskId,
+                outcome: "created",
+                state: "New",
+              })),
+            })
+          );
+        });
+        return;
+      }
+
+      response.writeHead(500, { "content-type": "application/json" });
+      response.end(JSON.stringify({ error: { code: "unexpected", message: "unexpected" } }));
+    });
+
+    const result = await runCli(
+      [
+        "import-plan",
+        "--plan-file",
+        "fixtures/example-plan.md",
+        "--json",
+      ],
+      {
+        KANBAN_API_URL: serverUrl,
+        KANBAN_PROJECT_ID: "project-1",
+      },
+      {
+        cwd: path.dirname(fileURLToPath(import.meta.url)),
+      }
+    );
+
+    expect(result.exitCode).toBe(0);
+    expect(JSON.parse(result.stdout).results[0].sourceTaskId).toBe("task-1");
   });
 });

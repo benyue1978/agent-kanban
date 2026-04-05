@@ -45,7 +45,7 @@ A collaborator can be:
 
 There are no additional first-class actor types in V1.
 
-Things like review are modeled as actions under workflow and project policy, not as separate domain roles.
+Things like review are modeled as evidence on the card timeline and completion rules, not as separate domain roles.
 
 ### Personal Inbox
 
@@ -57,7 +57,7 @@ Inbox is for communication, not task execution.
 
 Cards move through states:
 
-New → Ready → In Progress → In Review → Done
+New → Ready → In Progress → Done
 
 ## Collaboration Model
 
@@ -65,8 +65,8 @@ New → Ready → In Progress → In Review → Done
 - cards are refined in New state
 - cards move to Ready when sufficiently defined
 - humans or agents move cards to In Progress to execute
-- review happens in In Review
-- Done requires a final summary
+- review evidence is captured through comments and verification
+- Done requires a final summary plus verification evidence
 
 ## Product Philosophy
 
@@ -148,7 +148,7 @@ V1 intentionally keeps the model small.
 - inbox via mentions
 - single owner model
 - markdown-based card content
-- review gate through workflow
+- soft review recorded through comments, summary, and verification evidence
 - event history
 - CLI for agents
 - web UI for humans

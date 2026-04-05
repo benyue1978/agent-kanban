@@ -16,10 +16,10 @@ import type {
   BoardResponse,
   CardDetail,
   CardListItem,
-  ClaimReadyCardRequest,
-  ClaimReadyCardResponse,
   CreateCardRequest,
   CreateCardResponse,
+  ImportPlanTasksRequest,
+  ImportPlanTasksResponse,
   ListCardsRequest,
   ListCardsResponse,
   ListInboxRequest,
@@ -41,6 +41,7 @@ describe("contracts", () => {
   it("exports the canonical workflow states", () => {
     expect(CardState.Done).toBe("Done");
     expect(CommentKind.Decision).toBe("decision");
+    expect(CommentKind.Verification).toBe("verification");
     expect(InboxItemStatus.Resolved).toBe("resolved");
   });
 
@@ -50,7 +51,7 @@ describe("contracts", () => {
   });
 
   it("exports the documented default project policy", () => {
-    expect(defaultProjectPolicy.allowAgentReview).toBe(false);
+    expect(defaultProjectPolicy.allowAgentPickUnassignedReady).toBe(false);
   });
 
   it("exports project create and inbox status update contracts", () => {
@@ -59,8 +60,6 @@ describe("contracts", () => {
       description: "AI-native Kanban for humans and agents",
       repoUrl: "https://example.com/repo.git",
       policy: {
-        allowAgentReview: false,
-        allowSelfReview: false,
         allowAgentPickUnassignedReady: false,
         defaultSelectionPolicy: "priority_then_ready_age_then_updated_at",
       },
@@ -94,37 +93,6 @@ describe("contracts", () => {
     expect(inboxStatusUpdateResponse.item.status).toBe(InboxItemStatus.Acknowledged);
   });
 
-  it("exports the atomic claim contract", () => {
-    const claimRequest: ClaimReadyCardRequest = {
-      cardId: "card-1",
-      revision: 7,
-      ownerId: "collaborator-1",
-    };
-    const claimResponse: ClaimReadyCardResponse = {
-      card: {
-        id: "card-1",
-        projectId: "project-1",
-        title: "Example",
-        state: CardState.InProgress,
-        owner: {
-          id: "collaborator-1",
-          kind: "human",
-          displayName: "Song",
-        },
-        priority: 1,
-        revision: 8,
-        updatedAt: "2026-04-04T00:00:00.000Z",
-        descriptionMd: "# Example",
-        summaryMd: null,
-        comments: [],
-      },
-    };
-
-    expect(claimRequest.ownerId).toBe("collaborator-1");
-    expect(claimResponse.card.state).toBe(CardState.InProgress);
-    expect(claimResponse.card.owner?.id).toBe("collaborator-1");
-  });
-
   it("exports shared request and response interfaces", () => {
     const listCardsRequest: ListCardsRequest = {
       projectId: "project-1",
@@ -138,6 +106,9 @@ describe("contracts", () => {
       card: {
         id: "card-1",
         projectId: "project-1",
+        sourcePlanPath: null,
+        sourceSpecPath: null,
+        sourceTaskId: null,
         title: "Example",
         state: CardState.New,
         owner: null,
@@ -154,6 +125,7 @@ describe("contracts", () => {
       title: "Example",
       descriptionMd: "# Example",
       actorId: "collaborator-1",
+      sourceTaskId: "task-1",
     };
     const createCardResponse: CreateCardResponse = showCardResponse;
     const updateCardMarkdownRequest: UpdateCardMarkdownRequest = {
@@ -169,11 +141,11 @@ describe("contracts", () => {
       to: CardState.Ready,
       actorId: "collaborator-1",
     };
-    const sendBackStateRequest: SetCardStateRequest = {
+    const inProgressStateRequest: SetCardStateRequest = {
       cardId: "card-1",
       revision: 1,
       to: CardState.InProgress,
-      mode: "send_back",
+      ownerId: "collaborator-1",
       actorId: "collaborator-1",
     };
     const setCardStateResponse: SetCardStateResponse = showCardResponse;
@@ -193,7 +165,12 @@ describe("contracts", () => {
     const appendCardSummaryResponse: AppendCardSummaryResponse = {
       card: {
         ...showCardResponse.card,
-        state: CardState.InReview,
+        state: CardState.InProgress,
+        owner: {
+          id: "collaborator-1",
+          kind: "human",
+          displayName: "Song",
+        },
         summaryMd: "Done",
       },
     };
@@ -201,7 +178,7 @@ describe("contracts", () => {
       cardId: "card-1",
       authorId: "collaborator-1",
       body: "Working on it",
-      kind: CommentKind.Progress,
+      kind: CommentKind.Verification,
     };
     const addCommentResponse: AddCommentResponse = {
       comment: {
@@ -243,15 +220,34 @@ describe("contracts", () => {
           state: CardState.InProgress,
           cards: [],
         },
-        [CardState.InReview]: {
-          state: CardState.InReview,
-          cards: [],
-        },
         [CardState.Done]: {
           state: CardState.Done,
           cards: [],
         },
       },
+    };
+    const importPlanRequest: ImportPlanTasksRequest = {
+      actorId: "collaborator-1",
+      tasks: [
+        {
+          sourcePlanPath: "docs/superpowers/plans/example.md",
+          sourceSpecPath: "docs/superpowers/specs/example.md",
+          sourceTaskFingerprint: "abc123",
+          sourceTaskId: "task-1",
+          title: "Implement importer",
+          descriptionMd: "# Implement importer",
+        },
+      ],
+    };
+    const importPlanResponse: ImportPlanTasksResponse = {
+      results: [
+        {
+          cardId: "card-1",
+          sourceTaskId: "task-1",
+          outcome: "created",
+          state: CardState.New,
+        },
+      ],
     };
     const projectListResponse: ProjectListResponse = {
       projects: [
@@ -263,7 +259,6 @@ describe("contracts", () => {
             [CardState.New]: 1,
             [CardState.Ready]: 0,
             [CardState.InProgress]: 0,
-            [CardState.InReview]: 0,
             [CardState.Done]: 0,
           },
         },
@@ -279,19 +274,21 @@ describe("contracts", () => {
     expect(updateCardMarkdownRequest.revision).toBe(1);
     expect(updateCardMarkdownResponse.card.descriptionMd).toBe("# Example");
     expect(setCardStateRequest.to).toBe(CardState.Ready);
-    expect(sendBackStateRequest.mode).toBe("send_back");
+    expect(inProgressStateRequest.ownerId).toBe("collaborator-1");
     expect(setCardStateResponse.card.state).toBe(CardState.New);
     expect(assignCardOwnerRequest.ownerId).toBe("collaborator-1");
     expect(assignCardOwnerResponse.card.owner).toBeNull();
     expect(appendCardSummaryRequest.summaryMd).toBe("Done");
     expect(appendCardSummaryResponse.card.summaryMd).toBe("Done");
-    expect(appendCardSummaryResponse.card.state).toBe(CardState.InReview);
-    expect(addCommentRequest.kind).toBe(CommentKind.Progress);
+    expect(appendCardSummaryResponse.card.state).toBe(CardState.InProgress);
+    expect(addCommentRequest.kind).toBe(CommentKind.Verification);
     expect(addCommentResponse.comment.body).toBe("Working on it");
     expect(listInboxRequest.status).toBe(InboxItemStatus.Open);
     expect(listInboxResponse.items).toHaveLength(1);
     expect(boardResponse.columns[CardState.New].cards).toHaveLength(1);
     expect(projectListResponse.projects[0]?.countsByState[CardState.New]).toBe(1);
+    expect(importPlanRequest.tasks).toHaveLength(1);
+    expect(importPlanResponse.results[0]?.outcome).toBe("created");
 
     expectTypeOf(listCardsResponse).toMatchTypeOf<ListCardsResponse>();
     expectTypeOf<AddCommentRequest>().not.toHaveProperty("mentions");

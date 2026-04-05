@@ -1,136 +1,271 @@
 # agent-kanban
 
-AI-native Kanban for human + agent collaboration.
+AI-native Kanban for human + agent software delivery.
 
-## What it is
+`agent-kanban` is a local-first Kanban system built for repositories where humans work in a browser and agents work from the CLI, while both operate against the same backend workflow rules.
 
-agent-kanban is a software development Kanban system designed for teams where collaborators can be humans or AI agents.
+It is opinionated on purpose:
 
-It is built for a workflow where:
+- cards are execution units, not loose reminders
+- workflow state is enforced by the backend
+- card history stays understandable to humans
+- agents get a stable API and CLI instead of scraping UI state
 
-- code and artifacts live in a Git repository
-- task process and progress live in a Kanban system
-- cards act as execution harnesses for work
-- agents primarily use CLI
-- humans primarily use a web UI
+## Why This Exists
 
-This is not a workflow engine and not an autonomous orchestrator. It is a Kanban tool that is AI-native.
+Most project boards are designed for humans only. Most agent workflows are glued together with prompts, local notes, and ad hoc scripts. `agent-kanban` sits in between:
 
-## Core idea
+- the repo remains the source of implementation truth
+- the Kanban system remains the source of process truth
+- the card remains the source of execution context
 
-The system separates three things that are often mixed together:
+That separation makes the system usable for real software work, not just demos.
 
-- **implementation truth** lives in the repo
-- **process truth** lives in the Kanban system
-- **execution context** lives in the card
+## Current Status
 
-That means:
+The current vertical slice is working locally and includes:
 
-- repo answers: what was built
-- kanban answers: what is happening
-- card answers: what this unit of work needs in order to be executed
+- PostgreSQL-backed API with enforced workflow transitions
+- CLI for agent-oriented task execution
+- Next.js web UI for board, card detail, inbox, and focused human card actions
+- comment mentions, inbox items, audit history, and revision-aware writes
+- plan import, bootstrap import, and end-to-end verification scripts
 
-## Actor model
+Workflow in the current slice:
 
-There are only two actor types in V1:
+`New -> Ready -> In Progress -> Done`
 
-- human
-- agent
+## Architecture
 
-The system does not introduce additional first-class actor roles such as reviewer. Review is modeled as an allowed action under workflow and project policy.
+This repo is a modular monolith with three runtime surfaces:
 
-## Project model
+- `apps/api` - Fastify API and Prisma-backed persistence
+- `apps/cli` - agent-facing CLI that talks only to the API
+- `apps/web` - human-facing Next.js UI
 
-One Kanban equals one project.
+Shared packages:
 
-A project is bound to a logical repository identity, represented by `repo_url`.
+- `packages/contracts` - API contracts and DTOs
+- `packages/domain` - workflow and domain rules
+- `packages/card-markdown` - card markdown parsing and validation
 
-At runtime, work usually happens from a local clone or worktree, using:
+## Quickstart
 
-- `repo_url` = logical repository identity
-- local cwd / repo context = local execution context
-- `kanban_url` = Kanban system endpoint
+### 1. Check local tooling
 
-## Workflow shape
+```bash
+pnpm check:tooling
+```
 
-Cards move through a lightweight but enforced lifecycle:
+Expected local requirements:
 
-New → Ready → In Progress → In Review → Done
+- Node.js 24
+- pnpm 10
+- Docker with `docker compose`
+- `psql`
 
-The system is intentionally small in model shape, but strict in execution rules.
+### 2. Configure environment
 
-V1 does not include:
+Copy the root env file and adjust if needed:
 
-- multi-owner cards
-- blocked state
-- workflow engine
-- complex approval object model
-- real-time collaborative markdown editing
+```bash
+cp .env.example .env
+```
 
-## Card model
+The current verification scripts assume a local Postgres running on port `5433`, so align `DATABASE_URL` and `POSTGRES_PORT` accordingly if your machine already uses `5432`.
 
-A card is the core execution unit of the system.
+Example:
 
-A card is not just a task label. It is an execution harness that helps a human or agent understand:
+```env
+DATABASE_URL=postgresql://agent_kanban:agent_kanban@localhost:5433/agent_kanban?schema=public
+POSTGRES_DB=agent_kanban
+POSTGRES_USER=agent_kanban
+POSTGRES_PASSWORD=agent_kanban
+POSTGRES_PORT=5433
+```
 
-- what needs to be done
-- what context matters
-- what counts as done
-- what constraints apply
-- how the result should later be summarized
+### 3. Start everything
 
-## Bootstrapping goal
+```bash
+pnpm start
+```
 
-The MVP is not only to make the system usable.
+That command does three things:
 
-The real bar is that once the system is running, earlier planning work can be backfilled into real cards, and future work can then be planned and executed through the system itself.
+- builds the shared contracts and host CLI
+- builds the Docker images
+- starts `postgres`, `api`, and `web` with Docker Compose
 
-In other words:
+Default local endpoints:
 
-1. repo-first planning comes first
-2. MVP is implemented
-3. draft cards are backfilled into the system
-4. future work moves into the running Kanban system
+- web UI: `http://127.0.0.1:3000`
+- API: `http://127.0.0.1:3001`
 
-## Documentation map
+### 4. Run the full test suite
 
-The repo docs are the normative source for system rules.
+```bash
+pnpm test
+```
 
-- `docs/product.md` — product scope, concepts, and user model
-- `docs/domain-model.md` — entities, relationships, and lifecycle
-- `docs/architecture.md` — architecture, runtime vs domain, and enforcement responsibilities
-- `docs/card-spec.md` — canonical card template and summary rules
-- `docs/workflow.md` — state transitions, claim behavior, and workflow validation
-- `docs/project-policy.md` — minimal project-level policy surface
-- `docs/comment-model.md` — comment kinds, inbox semantics, and summary boundary
-- `docs/markdown-model.md` — markdown update rules, revision checks, and structured update model
-- `docs/source-of-truth.md` — layered source-of-truth model
-- `docs/bootstrapping.md` — repo-first planning, backfill, and self-management
-- `docs/cli.md` — CLI and command contract
-- `docs/web-ui.md` — human-facing UI requirements
-- `docs/mvp.md` — MVP definition and bootstrapping criteria
-- `skills/SKILL.md` — agent operational skill derived from the repo docs
+### 5. Seed the initial historical cards
 
-## Design direction
+```bash
+node scripts/backfill-initial-cards.ts
+```
 
-The design goal is to stay:
+### 6. Run the full vertical-slice verifier
 
-- simple in model shape
-- explicit in system contracts
-- strict in backend enforcement
-- practical for human + agent collaboration
+```bash
+node scripts/verify-vertical-slice.mjs
+```
 
-The system should feel closer to a strong project board for humans, while giving agents a stable and reliable way to:
+### 7. Stop the stack when done
 
-- read context
-- perform work
-- update state
-- handle conflicts
-- leave behind understandable history
+```bash
+pnpm stop
+```
 
-## Tech choices
+## Running The Apps
 
-- Backend: Node.js
-- CLI: Node.js
-- Frontend: Next.js
-- Database: PostgreSQL
+The default path is `pnpm start`. If you need the lower-level commands:
+
+Build every local package and the Docker images:
+
+```bash
+pnpm build:all
+```
+
+Start only the Compose stack:
+
+```bash
+docker compose up -d --build
+```
+
+Start the API directly on the host:
+
+```bash
+pnpm --filter @agent-kanban/api dev
+```
+
+Start the web app:
+
+```bash
+pnpm --filter @agent-kanban/web dev
+```
+
+Build the CLI:
+
+```bash
+pnpm --filter @agent-kanban/cli build
+```
+
+The web UI is meant for humans. The CLI is meant for agents and automation. Both should rely on the same backend behavior rather than duplicating workflow logic.
+
+## Using The System
+
+### For humans
+
+- open the board in the web UI
+- inspect card detail, comments, and timeline
+- manage inbox items triggered by mentions
+- move well-defined work into `Ready`
+- start `Ready` work in the browser when a human is taking responsibility
+- add verification comments and complete work from `In Progress` to `Done` when summary and evidence are present
+
+### For agents
+
+Start with the repo skill at [skills/agent-kanban/SKILL.md](skills/agent-kanban/SKILL.md). That is the agent-facing operating guide for how to pick work, interpret cards, use the CLI, handle conflicts, and move cards through the workflow correctly.
+
+For plan-driven work, the intended loop is:
+
+1. use superpowers skills to write or approve the spec and implementation plan in the repo
+2. import executable plan tasks into Kanban cards
+3. execute from cards while treating the linked plan/spec docs as planning truth
+
+Plan import is available from the CLI:
+
+```bash
+kanban import-plan --plan docs/superpowers/plans/2026-04-04-local-first-mvp-vertical-slice.md
+```
+
+Once the CLI is built, use `kanban` commands to work against the API:
+
+```bash
+kanban list
+kanban show <card-id>
+kanban create
+kanban assign-owner <card-id> <actor-id>
+kanban set-state <card-id> <state>
+kanban update-card <card-id>
+kanban append-summary <card-id>
+kanban comment <card-id>
+kanban import-plan --plan <plan-path>
+```
+
+The CLI supports `--json` output for automation-oriented flows.
+
+## Repo Map
+
+```text
+apps/
+  api/   Fastify + Prisma backend
+  cli/   agent-facing CLI
+  web/   Next.js human UI
+packages/
+  contracts/
+  domain/
+  card-markdown/
+bootstrap/
+  initial-cards.md
+docs/
+  project-overview.md
+  *.md product and system docs
+skills/
+  agent-kanban/SKILL.md
+scripts/
+  check-tooling.mjs
+  backfill-initial-cards.ts
+  verify-vertical-slice.mjs
+```
+
+## Documentation
+
+Start here for deeper system docs:
+
+- [Project overview](docs/project-overview.md)
+- [Product](docs/product.md)
+- [Architecture](docs/architecture.md)
+- [Domain model](docs/domain-model.md)
+- [Workflow](docs/workflow.md)
+- [CLI contract](docs/cli.md)
+- [Web UI](docs/web-ui.md)
+- [MVP definition](docs/mvp.md)
+- [Vertical-slice design spec](docs/superpowers/specs/2026-04-04-local-first-mvp-vertical-slice-design.md)
+- [Vertical-slice implementation plan](docs/superpowers/plans/2026-04-04-local-first-mvp-vertical-slice.md)
+- [Agent operating skill](skills/agent-kanban/SKILL.md)
+
+## What Makes This Different
+
+- Local-first by default. You can run, test, and verify the system entirely on your machine.
+- Human and agent surfaces are separate, but the workflow contract is shared.
+- The board is not treated as a passive reporting layer; it is an enforced execution system.
+- Bootstrap matters. Earlier planning work can be imported into the live system and carried forward there.
+
+## Roadmap Direction
+
+The current slice proves the core loop. The next steps are about making it operationally stronger:
+
+- better self-hosting and setup ergonomics
+- richer board interactions without weakening backend enforcement
+- stronger actor ergonomics for both humans and agents
+- planning and execution that can increasingly happen inside the system itself
+
+## Contributing
+
+If you are exploring the repo, start by running the verifier, not by skimming architecture diagrams only:
+
+```bash
+node scripts/verify-vertical-slice.mjs
+```
+
+If you change workflow behavior, contracts, or markdown semantics, update the docs alongside the code. In this repo, the docs are part of the interface.

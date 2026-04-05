@@ -24,6 +24,10 @@ interface CreateCardInput {
   descriptionMd: string;
   priority?: number | null;
   projectId: string;
+  sourcePlanPath?: string | null;
+  sourceSpecPath?: string | null;
+  sourceTaskFingerprint?: string | null;
+  sourceTaskId?: string | null;
   title: string;
 }
 
@@ -93,6 +97,9 @@ function toCardListItem(card: CardWithOwner): CardListItem {
   const base = {
     id: card.id,
     projectId: card.projectId,
+    sourcePlanPath: card.sourcePlanPath,
+    sourceSpecPath: card.sourceSpecPath,
+    sourceTaskId: card.sourceTaskId,
     title: card.title,
     priority: card.priority,
     revision: card.revision,
@@ -108,12 +115,7 @@ function toCardListItem(card: CardWithOwner): CardListItem {
       if (owner === null) {
         throw new Error("In Progress cards must have an owner");
       }
-      return { ...base, state: CardState.InProgress, owner, summaryMd: null };
-    case CardState.InReview:
-      if (owner === null) {
-        throw new Error("In Review cards must have an owner");
-      }
-      return { ...base, state: CardState.InReview, owner, summaryMd };
+      return { ...base, state: CardState.InProgress, owner, summaryMd };
     case CardState.Done:
       if (summaryMd === null) {
         throw new Error("Done cards must have a final summary");
@@ -138,7 +140,6 @@ function createEmptyBoard(): BoardResponse {
       [CardState.New]: { state: CardState.New, cards: [] },
       [CardState.Ready]: { state: CardState.Ready, cards: [] },
       [CardState.InProgress]: { state: CardState.InProgress, cards: [] },
-      [CardState.InReview]: { state: CardState.InReview, cards: [] },
       [CardState.Done]: { state: CardState.Done, cards: [] },
     },
   };
@@ -156,6 +157,10 @@ export class CardRepository {
         revision: 1,
         state: CardState.New,
         priority: input.priority ?? null,
+        sourceTaskId: input.sourceTaskId ?? null,
+        sourceTaskFingerprint: input.sourceTaskFingerprint ?? null,
+        sourcePlanPath: input.sourcePlanPath ?? null,
+        sourceSpecPath: input.sourceSpecPath ?? null,
       },
       include: cardDetailInclude,
     });
@@ -196,6 +201,18 @@ export class CardRepository {
   async findById(cardId: string): Promise<CardDetail | null> {
     const card = await this.prisma.card.findUnique({
       where: { id: cardId },
+      include: cardDetailInclude,
+    });
+
+    return card === null ? null : toCardDetail(card);
+  }
+
+  async findBySourceTaskId(projectId: string, sourceTaskId: string): Promise<CardDetail | null> {
+    const card = await this.prisma.card.findFirst({
+      where: {
+        projectId,
+        sourceTaskId,
+      },
       include: cardDetailInclude,
     });
 

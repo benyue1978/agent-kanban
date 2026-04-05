@@ -6,6 +6,7 @@ import { runAssignOwnerCommand } from "./commands/assign-owner.js";
 import { runCommentCommand } from "./commands/comment.js";
 import type { CommandEnvironment } from "./commands/common.js";
 import { runCreateCommand } from "./commands/create.js";
+import { runImportPlanCommand } from "./commands/import-plan.js";
 import { runListCommand } from "./commands/list.js";
 import { runSetStateCommand } from "./commands/set-state.js";
 import { runShowCommand } from "./commands/show.js";
@@ -79,6 +80,8 @@ async function main(): Promise<void> {
             ? await runCreateCommand(context)
             : command === "assign-owner"
               ? await runAssignOwnerCommand(context)
+              : command === "import-plan"
+                ? await runImportPlanCommand(context)
               : command === "set-state"
                 ? await runSetStateCommand(context)
                 : command === "update-card"

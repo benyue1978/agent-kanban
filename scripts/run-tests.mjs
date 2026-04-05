@@ -18,6 +18,8 @@ function run(command, commandArgs) {
 if (args.length > 0) {
   if (args[0] === "--run" && args[1] === "bootstrap-importer") {
     run("pnpm", ["exec", "vitest", "run", "scripts/tests/bootstrap-importer.test.ts"]);
+  } else if (args[0] === "--run" && args[1] === "plan-importer") {
+    run("pnpm", ["exec", "vitest", "run", "scripts/tests/plan-importer.test.ts"]);
   } else {
     run("pnpm", ["exec", "vitest", "run", ...args, "scripts/tests"]);
   }

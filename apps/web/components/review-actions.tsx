@@ -1,9 +1,14 @@
 "use client";
 
-import { CardState, CommentKind, type CardDetail } from "@agent-kanban/contracts";
-import { LoaderCircle, MessageSquarePlus, RotateCcw, ShieldCheck, Zap } from "lucide-react";
+import {
+  CardState,
+  CommentKind,
+  type CardDetail,
+  type CommentKindValue,
+} from "@agent-kanban/contracts";
+import { LoaderCircle, MessageSquarePlus, ShieldCheck, Zap } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useEffect, useMemo, useState, useTransition } from "react";
+import { useEffect, useState, useTransition } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -34,7 +39,7 @@ export function ReviewActions({
     return (
       <Card className="border-dashed bg-card/70">
         <CardHeader>
-          <CardTitle>Browser review actions are not configured.</CardTitle>
+          <CardTitle>Browser card actions are not configured.</CardTitle>
           <CardDescription>{humanActorConfigurationMessage}</CardDescription>
         </CardHeader>
       </Card>
@@ -70,10 +75,13 @@ function ConfiguredReviewActions({
   }, [card.state]);
 
   const isBusy = pendingAction !== null || isRefreshing;
-  const commentKind = useMemo(
-    () => (optimisticState === CardState.InReview ? CommentKind.Decision : CommentKind.Note),
-    [optimisticState]
+  const [commentKind, setCommentKind] = useState<CommentKindValue>(
+    optimisticState === CardState.InProgress ? CommentKind.Verification : CommentKind.Note
   );
+
+  useEffect(() => {
+    setCommentKind(optimisticState === CardState.InProgress ? CommentKind.Verification : CommentKind.Note);
+  }, [optimisticState]);
 
   async function runAction(
     action: string,
@@ -103,12 +111,12 @@ function ConfiguredReviewActions({
       <CardHeader className="gap-4 border-b border-border/70 bg-gradient-to-br from-primary/10 via-transparent to-accent/15">
         <div className="flex items-center gap-2 text-[11px] font-medium uppercase tracking-[0.28em] text-primary">
           <ShieldCheck className="size-4" />
-          Human Review Surface
+          Human Card Controls
         </div>
         <div className="space-y-2">
-          <CardTitle>Review actions stay small and deliberate.</CardTitle>
+          <CardTitle>Browser actions stay small and deliberate.</CardTitle>
           <CardDescription>
-            Acting as <span className="font-mono text-foreground">{humanActorId}</span>. Browser writes are limited to review work, priority tuning, and timeline comments.
+            Acting as <span className="font-mono text-foreground">{humanActorId}</span>. Browser writes are limited to queueing, priority tuning, verification comments, and completion.
           </CardDescription>
         </div>
       </CardHeader>
@@ -177,36 +185,37 @@ function ConfiguredReviewActions({
               </Button>
             ) : null}
 
-            {optimisticState === CardState.InReview ? (
+            {optimisticState === CardState.Ready ? (
+              <Button
+                disabled={isBusy}
+                onClick={() => {
+                  void runAction("start-work", async () => {
+                    return await fetch(`/api/cards/${card.id}/state`, {
+                      method: "POST",
+                      headers: {
+                        "content-type": "application/json",
+                      },
+                      body: JSON.stringify({
+                        ownerId: humanActorId,
+                        revision: card.revision,
+                        to: CardState.InProgress,
+                      }),
+                    });
+                  }, () => {
+                    setOptimisticState(CardState.InProgress);
+                  });
+                }}
+              >
+                Start Work
+              </Button>
+            ) : null}
+
+            {optimisticState === CardState.InProgress ? (
               <>
                 <Button
-                  variant="secondary"
                   disabled={isBusy}
                   onClick={() => {
-                    void runAction("send-back", async () => {
-                      return await fetch(`/api/cards/${card.id}/state`, {
-                        method: "POST",
-                        headers: {
-                          "content-type": "application/json",
-                        },
-                        body: JSON.stringify({
-                          mode: "send_back",
-                          revision: card.revision,
-                          to: CardState.InProgress,
-                        }),
-                      });
-                    }, () => {
-                      setOptimisticState(CardState.InProgress);
-                    });
-                  }}
-                >
-                  <RotateCcw className="size-4" />
-                  Send Back To In Progress
-                </Button>
-                <Button
-                  disabled={isBusy}
-                  onClick={() => {
-                    void runAction("complete-review", async () => {
+                    void runAction("mark-done", async () => {
                       return await fetch(`/api/cards/${card.id}/state`, {
                         method: "POST",
                         headers: {
@@ -223,7 +232,7 @@ function ConfiguredReviewActions({
                   }}
                 >
                   <Zap className="size-4" />
-                  Complete Review
+                  Mark Done
                 </Button>
               </>
             ) : null}
@@ -250,9 +259,36 @@ function ConfiguredReviewActions({
           />
         </div>
 
+        <div className="grid gap-3 md:grid-cols-[minmax(0,1fr)_auto] md:items-end">
+          <div className="space-y-2">
+            <label
+              htmlFor="card-comment-kind"
+              className="text-[11px] font-medium uppercase tracking-[0.28em] text-muted-foreground"
+            >
+              Comment kind
+            </label>
+            <select
+              id="card-comment-kind"
+              aria-label="Comment kind"
+              className="h-11 w-full rounded-[1rem] border border-border/70 bg-white/80 px-4 text-sm text-foreground outline-none transition focus:border-primary/60 focus:ring-2 focus:ring-ring/30"
+              disabled={isBusy}
+              value={commentKind}
+              onChange={(event) => {
+                setCommentKind(event.target.value as CommentKindValue);
+              }}
+            >
+              <option value={CommentKind.Note}>note</option>
+              <option value={CommentKind.Decision}>decision</option>
+              <option value={CommentKind.Question}>question</option>
+              <option value={CommentKind.Progress}>progress</option>
+              <option value={CommentKind.Verification}>verification</option>
+            </select>
+          </div>
+        </div>
+
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div className="text-sm leading-6 text-muted-foreground">
-            Keep CLI-first markdown editing. Use comments for review rationale and @mentions.
+            Keep CLI-first markdown editing. Use verification comments to record completion evidence before marking a card done.
           </div>
           <Button
             variant="secondary"

@@ -44,12 +44,12 @@ describe("card markdown", () => {
     expect(() => validateCompletionSummary(sample)).not.toThrow();
   });
 
-  it("rejects completion when DoD Check is missing from the final summary", () => {
+  it("accepts completion when DoD Check is omitted from the final summary", () => {
     expect(() =>
       validateCompletionSummary(`## Final Summary
 ### What was done
 Shipped it`)
-    ).toThrowError(/summary_required/);
+    ).not.toThrow();
   });
 
   it("appends a protected final summary block when one is missing", () => {

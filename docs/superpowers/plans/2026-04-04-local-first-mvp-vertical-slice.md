@@ -367,14 +367,13 @@ describe('workflow', () => {
     ).toThrowError(/invalid_transition/);
   });
 
-  it('requires summary and review gate before In Review -> Done', () => {
+  it('requires summary before In Progress -> Done', () => {
     expect(() =>
       canTransition({
-        from: 'In Review',
+        from: 'In Progress',
         to: 'Done',
         actorType: 'human',
         summaryPresent: false,
-        reviewGatePassed: false,
       })
     ).toThrowError(/summary_required/);
   });
@@ -399,7 +398,7 @@ Expected: FAIL because the package and workflow functions do not exist yet.
 Implement:
 
 - explicit transition validation
-- policy checks for agent review, self-review, and unassigned Ready pickup
+- policy checks for unassigned Ready pickup
 - selection ordering helper
 - stable thrown errors that use the shared error codes
 
@@ -472,7 +471,7 @@ Expected: FAIL because the package and parser do not exist yet.
 Implement:
 
 - protected heading detection for all required sections
-- summary validation for `In Review -> Done`
+- summary validation for `In Progress -> Done`
 - helper for safe summary appends
 
 Do not implement a general markdown AST editor in this slice.
@@ -881,10 +880,10 @@ test('human can review or send back a card from the browser', async ({ page }) =
 
 - [ ] **Step 2: Run the smoke test to verify it fails**
 
-Run: `pnpm --filter @agent-kanban/web test:e2e -- --grep "human can review"`
-Expected: FAIL because the inbox page and review actions are missing.
+Run: `pnpm --filter @agent-kanban/web test:e2e -- --grep "human can verify"`
+Expected: FAIL because the inbox page and completion actions are missing.
 
-- [ ] **Step 3: Implement inbox and review actions**
+- [ ] **Step 3: Implement inbox and completion actions**
 
 Requirements:
 
@@ -893,20 +892,20 @@ Requirements:
   - add comment
   - update priority
   - `New -> Ready`
-  - `In Review -> In Progress`
-  - `In Review -> Done`
+  - `Ready -> In Progress`
+  - `In Progress -> Done`
 - block browser-side writes that are intentionally CLI-only
 
 - [ ] **Step 4: Run the inbox and review smoke test**
 
-Run: `pnpm --filter @agent-kanban/web test:e2e -- --grep "human can review"`
+Run: `pnpm --filter @agent-kanban/web test:e2e -- --grep "human can verify"`
 Expected: PASS
 
 - [ ] **Step 5: Commit**
 
 ```bash
 git add apps/web
-git commit -m "feat: add inbox and review actions"
+git commit -m "feat: add inbox and completion actions"
 ```
 
 ### Task 11: Implement bootstrap import and full-system verification

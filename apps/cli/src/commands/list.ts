@@ -10,7 +10,6 @@ const orderedStates = [
   CardState.New,
   CardState.Ready,
   CardState.InProgress,
-  CardState.InReview,
   CardState.Done,
 ] as const;
 

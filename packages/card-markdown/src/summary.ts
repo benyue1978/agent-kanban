@@ -29,9 +29,9 @@ export function validateCompletionSummary(markdown: string): void {
     throw new SummaryValidationError("summary_required: final summary is required before completion");
   }
 
-  if (sections.finalSummaryWhatWasDone === undefined || sections.finalSummaryDodCheck === undefined) {
+  if (sections.finalSummaryWhatWasDone === undefined) {
     throw new SummaryValidationError(
-      "summary_required: final summary must include 'What was done' and 'DoD Check'"
+      "summary_required: final summary must include 'What was done'"
     );
   }
 }

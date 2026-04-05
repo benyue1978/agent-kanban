@@ -12,8 +12,6 @@ async function seedWorkflowFixture(client: PrismaClient): Promise<void> {
       name: "agent-kanban",
       repoUrl: "https://example.com/repo.git",
       policyJson: {
-        allowAgentReview: false,
-        allowSelfReview: false,
         allowAgentPickUnassignedReady: true,
         defaultSelectionPolicy: "priority_then_ready_age_then_updated_at",
       },
@@ -154,5 +152,99 @@ describe.sequential("workflow routes", () => {
     expect(first.statusCode).toBe(200);
     expect(second.statusCode).toBe(409);
     expect(second.json().error.code).toBe("revision_conflict");
+  });
+
+  it("imports plan tasks idempotently and protects active cards", async () => {
+    const app = await buildApp({ prisma });
+
+    const first = await app.inject({
+      method: "POST",
+      url: "/projects/project-1/import-plan",
+      payload: {
+        actorId: "agent-1",
+        tasks: [
+          {
+            sourceTaskId: "task-1",
+            sourceTaskFingerprint: "fingerprint-1",
+            sourcePlanPath: "docs/superpowers/plans/example.md",
+            sourceSpecPath: "docs/superpowers/specs/example.md",
+            title: "Imported task",
+            descriptionMd: "# Imported task",
+          },
+        ],
+      },
+    });
+
+    expect(first.statusCode).toBe(200);
+    expect(first.json().results[0].outcome).toBe("created");
+
+    const second = await app.inject({
+      method: "POST",
+      url: "/projects/project-1/import-plan",
+      payload: {
+        actorId: "agent-1",
+        tasks: [
+          {
+            sourceTaskId: "task-1",
+            sourceTaskFingerprint: "fingerprint-1",
+            sourcePlanPath: "docs/superpowers/plans/example.md",
+            sourceSpecPath: "docs/superpowers/specs/example.md",
+            title: "Imported task",
+            descriptionMd: "# Imported task",
+          },
+        ],
+      },
+    });
+
+    expect(second.statusCode).toBe(200);
+    expect(second.json().results[0].outcome).toBe("unchanged");
+
+    const importedCardId = first.json().results[0].cardId as string;
+    const importedCard = await prisma.card.findUniqueOrThrow({
+      where: { id: importedCardId },
+      select: { revision: true },
+    });
+
+    await app.inject({
+      method: "POST",
+      url: `/cards/${importedCardId}/assign-owner`,
+      payload: {
+        actorId: "agent-1",
+        ownerId: "agent-1",
+        revision: importedCard.revision,
+      },
+    });
+
+    const moved = await app.inject({
+      method: "POST",
+      url: `/cards/${importedCardId}/set-state`,
+      payload: {
+        actorId: "agent-1",
+        ownerId: "agent-1",
+        to: "In Progress",
+      },
+    });
+    expect(moved.statusCode).toBe(200);
+
+    const protectedResponse = await app.inject({
+      method: "POST",
+      url: "/projects/project-1/import-plan",
+      payload: {
+        actorId: "agent-1",
+        tasks: [
+          {
+            sourceTaskId: "task-1",
+            sourceTaskFingerprint: "fingerprint-2",
+            sourcePlanPath: "docs/superpowers/plans/example.md",
+            sourceSpecPath: "docs/superpowers/specs/example.md",
+            title: "Imported task updated",
+            descriptionMd: "# Imported task updated",
+          },
+        ],
+      },
+    });
+
+    expect(protectedResponse.statusCode).toBe(200);
+    expect(protectedResponse.json().results[0].outcome).toBe("protected");
   });
 });

@@ -1,0 +1,26 @@
+FROM node:24-bookworm-slim AS base
+
+ENV PNPM_HOME="/pnpm"
+ENV PATH="$PNPM_HOME:$PATH"
+
+RUN corepack enable
+
+WORKDIR /app
+
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml tsconfig.base.json ./
+COPY apps/web/package.json apps/web/package.json
+COPY packages/contracts/package.json packages/contracts/package.json
+
+RUN pnpm install --frozen-lockfile --ignore-scripts
+
+COPY apps/web apps/web
+COPY packages/contracts packages/contracts
+
+RUN pnpm --filter @agent-kanban/contracts build \
+  && pnpm --filter @agent-kanban/web build
+
+WORKDIR /app/apps/web
+
+EXPOSE 3000
+
+CMD ["pnpm", "start"]

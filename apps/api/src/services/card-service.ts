@@ -5,11 +5,14 @@ import {
 } from "@agent-kanban/card-markdown";
 import {
   CardState,
+  CommentKind,
   defaultProjectPolicy,
   type BoardResponse,
   type CardStateValue,
   type CardDetail,
   type CreateCardRequest,
+  type ImportPlanTasksRequest,
+  type ImportPlanTasksResponse,
   type ProjectCreateRequest,
   type ProjectDetail,
   type ProjectPolicy,
@@ -26,7 +29,6 @@ export class ApiError extends Error {
       | "invalid_transition"
       | "missing_owner"
       | "missing_required_section"
-      | "review_gate_not_passed"
       | "summary_required"
       | "forbidden_action"
       | "revision_conflict"
@@ -44,7 +46,8 @@ type EventType =
   | "owner_assigned"
   | "state_changed"
   | "markdown_updated"
-  | "summary_updated";
+  | "summary_updated"
+  | "plan_task_imported";
 
 type EventActor = {
   id: string;
@@ -134,6 +137,15 @@ function hasRequiredSections(title: string, descriptionMd: string): boolean {
   return Boolean(title.length > 0 && sections.goal && sections.scope && sections.definitionOfDone);
 }
 
+async function countVerificationComments(prisma: PrismaClient, cardId: string): Promise<number> {
+  return await prisma.comment.count({
+    where: {
+      cardId,
+      kind: CommentKind.Verification,
+    },
+  });
+}
+
 export class CardService {
   private readonly cards: CardRepository;
   private readonly projects: ProjectRepository;
@@ -154,6 +166,144 @@ export class CardService {
       description: input.description ?? null,
       policy: input.policy ?? defaultProjectPolicy,
     });
+  }
+
+  async importPlanTasks(
+    projectId: string,
+    input: ImportPlanTasksRequest
+  ): Promise<ImportPlanTasksResponse> {
+    const actor = await resolveActor(this.prisma, input.actorId);
+    const results: ImportPlanTasksResponse["results"] = [];
+
+    for (const task of input.tasks) {
+      const existing = await this.cards.findBySourceTaskId(projectId, task.sourceTaskId);
+
+      if (existing === null) {
+        const created = await this.prisma.$transaction(async (tx) => {
+          const repository = new CardRepository(tx as PrismaClient);
+          const draftCard = await repository.create({
+            projectId,
+            title: task.title,
+            descriptionMd: task.descriptionMd,
+            priority: task.priority ?? null,
+            sourceTaskId: task.sourceTaskId,
+            sourceTaskFingerprint: task.sourceTaskFingerprint,
+            sourcePlanPath: task.sourcePlanPath,
+            sourceSpecPath: task.sourceSpecPath ?? null,
+          });
+          const card = await repository.updateById(draftCard.id, {
+            state: CardState.Ready,
+            revision: {
+              increment: 1,
+            },
+          });
+
+          await createEvent(tx, {
+            actorId: actor?.id ?? null,
+            cardId: card.id,
+            projectId,
+            type: "state_changed",
+            payloadJson: {
+              from: CardState.New,
+              to: CardState.Ready,
+              ownerId: null,
+            },
+          });
+
+          await createEvent(tx, {
+            actorId: actor?.id ?? null,
+            cardId: card.id,
+            projectId,
+            type: "plan_task_imported",
+            payloadJson: {
+              outcome: "created",
+              sourceTaskId: task.sourceTaskId,
+              sourcePlanPath: task.sourcePlanPath,
+              sourceSpecPath: task.sourceSpecPath ?? null,
+            },
+          });
+
+          return card;
+        });
+
+        results.push({
+          cardId: created.id,
+          sourceTaskId: task.sourceTaskId,
+          outcome: "created",
+          state: created.state,
+        });
+        continue;
+      }
+
+      if (existing.state === CardState.InProgress || existing.state === CardState.Done) {
+        results.push({
+          cardId: existing.id,
+          sourceTaskId: task.sourceTaskId,
+          outcome: "protected",
+          state: existing.state,
+        });
+        continue;
+      }
+
+      const unchanged =
+        existing.title === task.title &&
+        existing.descriptionMd === task.descriptionMd &&
+        existing.priority === (task.priority ?? null) &&
+        existing.sourcePlanPath === task.sourcePlanPath &&
+        existing.sourceSpecPath === (task.sourceSpecPath ?? null);
+
+      if (unchanged) {
+        results.push({
+          cardId: existing.id,
+          sourceTaskId: task.sourceTaskId,
+          outcome: "unchanged",
+          state: existing.state,
+        });
+        continue;
+      }
+
+      const updated = await this.prisma.$transaction(async (tx) => {
+        const repository = new CardRepository(tx as PrismaClient);
+        const card = await repository.updateById(existing.id, {
+          title: task.title,
+          descriptionMd: task.descriptionMd,
+          priority: task.priority ?? null,
+          state: CardState.Ready,
+          sourceTaskFingerprint: task.sourceTaskFingerprint,
+          sourcePlanPath: task.sourcePlanPath,
+          sourceSpecPath: task.sourceSpecPath ?? null,
+          revision: {
+            increment: 1,
+          },
+        });
+
+        await createEvent(tx, {
+          actorId: actor?.id ?? null,
+          cardId: card.id,
+          projectId,
+          type: "plan_task_imported",
+          payloadJson: {
+            outcome: "updated",
+            sourceTaskId: task.sourceTaskId,
+            sourcePlanPath: task.sourcePlanPath,
+            sourceSpecPath: task.sourceSpecPath ?? null,
+            previousState: existing.state,
+            nextState: CardState.Ready,
+          },
+        });
+
+        return card;
+      });
+
+      results.push({
+        cardId: updated.id,
+        sourceTaskId: task.sourceTaskId,
+        outcome: "updated",
+        state: updated.state,
+      });
+    }
+
+    return { results };
   }
 
   async getBoard(projectId: string): Promise<BoardResponse> {
@@ -482,6 +632,10 @@ export class CardService {
     }
 
     const actor = await resolveActor(this.prisma, input.actorId, existing.ownerId);
+    const verificationCount =
+      targetState === CardState.Done
+        ? await countVerificationComments(this.prisma, cardId)
+        : 0;
     const transitionInput = {
       from: currentState,
       to: targetState,
@@ -489,11 +643,9 @@ export class CardService {
       ownerId: existing.ownerId,
       requiredSectionsPresent: hasRequiredSections(existing.title, existing.descriptionMd),
       titlePresent: existing.title.length > 0,
-      executionResultPresent: true,
-      reviewRationalePresent: true,
-      reviewGatePassed: true,
-      summaryPresent: getProtectedSections(existing.descriptionMd).finalSummary !== undefined,
       dodCheckPresent: getProtectedSections(existing.descriptionMd).finalSummaryDodCheck !== undefined,
+      verificationEvidencePresent: verificationCount > 0,
+      summaryPresent: getProtectedSections(existing.descriptionMd).finalSummary !== undefined,
       policy: asProjectPolicy(existing.project.policyJson),
       ...(actor?.id === undefined ? {} : { actorId: actor.id }),
     };
@@ -528,6 +680,7 @@ export class CardService {
           from: currentState,
           to: targetState,
           ownerId: updated.owner?.id ?? null,
+          verificationCount: targetState === CardState.Done ? verificationCount : undefined,
         },
       });
 

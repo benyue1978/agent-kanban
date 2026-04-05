@@ -36,7 +36,6 @@ Displays cards by state columns:
 - New
 - Ready
 - In Progress
-- In Review
 - Done
 
 Card preview should show at least:
@@ -123,4 +122,4 @@ The web UI should make it easy for a human to:
 - inspect what agents are doing
 - leave comments
 - adjust priority
-- review work before Done
+- add verification evidence and complete work when it is ready

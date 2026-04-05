@@ -12,6 +12,12 @@ export interface ProtectedSections {
   finalSummaryDodCheck?: string;
 }
 
+export interface SourceTaskMetadata {
+  taskId: string;
+  planPath: string;
+  specPath: string | null;
+}
+
 interface HeadingBlock {
   bodyStart: number;
   content: string;
@@ -35,6 +41,12 @@ const finalSummaryHeadings = [
   ["finalSummaryResultLinks", "Result / Links"],
   ["finalSummaryDodCheck", "DoD Check"],
 ] as const satisfies ReadonlyArray<readonly [keyof ProtectedSections, string]>;
+
+const sourceMetadataPatterns = {
+  taskId: /<!--\s*agent-kanban:source-task-id=(.+?)\s*-->/,
+  planPath: /<!--\s*agent-kanban:source-plan-path=(.+?)\s*-->/,
+  specPath: /<!--\s*agent-kanban:source-spec-path=(.+?)\s*-->/,
+} as const;
 
 function getHeadingLineEnd(markdown: string, start: number, headingLength: number): number {
   const afterHeading = start + headingLength;
@@ -106,4 +118,39 @@ export function getProtectedSections(markdown: string): ProtectedSections {
   }
 
   return sections;
+}
+
+export function getSourceTaskMetadata(markdown: string): SourceTaskMetadata | null {
+  const taskId = markdown.match(sourceMetadataPatterns.taskId)?.[1]?.trim();
+  const planPath = markdown.match(sourceMetadataPatterns.planPath)?.[1]?.trim();
+  const specPathValue = markdown.match(sourceMetadataPatterns.specPath)?.[1]?.trim();
+
+  if (taskId === undefined || planPath === undefined) {
+    return null;
+  }
+
+  return {
+    taskId,
+    planPath,
+    specPath: specPathValue === undefined || specPathValue === "null" ? null : specPathValue,
+  };
+}
+
+export function upsertSourceTaskMetadata(
+  markdown: string,
+  metadata: SourceTaskMetadata
+): string {
+  const withoutExisting = markdown
+    .replace(/^<!--\s*agent-kanban:source-task-id=.+?-->\n?/gm, "")
+    .replace(/^<!--\s*agent-kanban:source-plan-path=.+?-->\n?/gm, "")
+    .replace(/^<!--\s*agent-kanban:source-spec-path=.+?-->\n?/gm, "")
+    .trimStart();
+
+  const metadataBlock = [
+    `<!-- agent-kanban:source-task-id=${metadata.taskId} -->`,
+    `<!-- agent-kanban:source-plan-path=${metadata.planPath} -->`,
+    `<!-- agent-kanban:source-spec-path=${metadata.specPath ?? "null"} -->`,
+  ].join("\n");
+
+  return `${metadataBlock}\n${withoutExisting}`;
 }

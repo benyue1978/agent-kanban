@@ -26,7 +26,7 @@ export function seedReviewUiFixture(): void {
       'project-ui',
       'agent-kanban',
       'https://example.com/repo.git',
-      '{"allowAgentReview": false, "allowSelfReview": false, "allowAgentPickUnassignedReady": true, "defaultSelectionPolicy": "priority_then_ready_age_then_updated_at"}'::jsonb,
+      '{"allowAgentPickUnassignedReady": true, "defaultSelectionPolicy": "priority_then_ready_age_then_updated_at"}'::jsonb,
       NOW()
     );
 
@@ -73,14 +73,14 @@ Queue it for work.
       (
         'card-review',
         'project-ui',
-        'Review-ready implementation',
-        '# Review-ready implementation
+        'Execution-ready implementation',
+        '# Execution-ready implementation
 
 ## Goal
-Review the delivered work.
+Verify and complete the delivered work.
 
 ## Scope
-Either send back or complete.
+Add verification evidence and complete.
 
 ## Definition of Done
 - [x] summary present
@@ -93,7 +93,7 @@ Either send back or complete.
 ### DoD Check
 - [x] summary present',
         4,
-        'In Review',
+        'In Progress',
         'agent-main',
         2,
         NOW(),
@@ -106,7 +106,7 @@ Either send back or complete.
       'card-review',
       'agent-main',
       'question',
-      '@human-reviewer please check this card.',
+      '@human-reviewer please verify this card.',
       NOW()
     );
 

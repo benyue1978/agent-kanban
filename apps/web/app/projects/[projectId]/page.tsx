@@ -4,11 +4,12 @@ import { Badge } from "@/components/ui/badge";
 import { fetchBoard } from "@/lib/api";
 import { getHumanActorId } from "@/lib/config";
 
+export const dynamic = "force-dynamic";
+
 const columnDescriptions = {
   New: "Freshly created cards before they are shaped into reviewable work.",
   Ready: "Queued work that can be pulled once scope and DoD are clear.",
-  "In Progress": "Execution lanes owned by the current collaborator.",
-  "In Review": "Human judgment zone for send-back or completion decisions.",
+  "In Progress": "Execution lanes owned by the current collaborator, including verification and summary work.",
   Done: "Completed cards with final summaries attached.",
 };
 
@@ -27,7 +28,7 @@ export default async function ProjectBoardPage({
         <div className="flex max-w-3xl flex-col gap-3">
           <Badge variant="outline">Project {projectId}</Badge>
           <h1 className="max-w-4xl text-balance text-4xl font-semibold tracking-[-0.05em] text-foreground md:text-6xl">
-            Review-oriented workflow visibility for humans and agents.
+            Card-driven execution for humans and agents.
           </h1>
           <p className="max-w-2xl text-base leading-7 text-muted-foreground md:text-lg">
             The board is the live process surface. Cards keep markdown and timeline context, while the backend remains the only workflow authority.
@@ -48,7 +49,7 @@ export default async function ProjectBoardPage({
         </div>
       </section>
 
-      <section className="grid gap-4 xl:grid-cols-5">
+      <section className="grid gap-4 xl:grid-cols-4">
         <BoardColumn
           state="New"
           description={columnDescriptions.New}
@@ -63,11 +64,6 @@ export default async function ProjectBoardPage({
           state="In Progress"
           description={columnDescriptions["In Progress"]}
           cards={board.columns["In Progress"].cards}
-        />
-        <BoardColumn
-          state="In Review"
-          description={columnDescriptions["In Review"]}
-          cards={board.columns["In Review"].cards}
         />
         <BoardColumn
           state="Done"

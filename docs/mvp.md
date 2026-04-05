@@ -75,14 +75,14 @@ The MVP must include:
 
 The system must support a full card lifecycle:
 
-New → Ready → In Progress → In Review → Done
+New → Ready → In Progress → Done
 
 ## Final Summary Requirement
 
 Before moving a card to Done:
 
 - Final Summary must be filled
-- DoD Check must be filled or explicitly addressed
+- verification evidence must be recorded
 
 ## Claim and Concurrency Requirements
 
@@ -118,7 +118,7 @@ The system must be able to:
 2. plan new work using cards
 3. execute work using agents through CLI
 4. record progress and comments
-5. review and finalize work
+5. verify and finalize work
 
 ## Bootstrapping DoD
 
@@ -128,11 +128,12 @@ The system is considered successful when all of the following are true:
 
 - the system runs locally
 - agents can interact with it through CLI
-- humans can inspect and review it through the web UI
+- humans can inspect, comment, verify, and complete it through the web UI
 
 ### Mechanism success
 
 - at least one repo draft card is backfilled into the running system
+- at least one approved implementation plan is imported into the running system as executable cards
 - at least one agent completes a full workflow using CLI:
 
   * list
@@ -140,8 +141,8 @@ The system is considered successful when all of the following are true:
   * update
   * comment
   * transition
-- at least one card passes through review gate and reaches Done
-- at least one card includes Final Summary and DoD Check
+- at least one card reaches Done from In Progress with Final Summary and verification evidence
+- at least one card includes Final Summary
 - at least one repo artifact is explicitly linked from a completed card
 
 ### Self-management success
@@ -167,8 +168,6 @@ Recommended marking approaches:
 
 V1 must support minimal project policy controls, including:
 
-- whether agent review is allowed
-- whether self-review is allowed
 - whether agents may pick unassigned Ready cards
 - default selection policy
 

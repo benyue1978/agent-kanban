@@ -9,7 +9,6 @@ const stateTone: Record<CardListItem["state"], string> = {
   New: "text-slate-600",
   Ready: "text-amber-700",
   "In Progress": "text-sky-700",
-  "In Review": "text-violet-700",
   Done: "text-emerald-700",
 };
 

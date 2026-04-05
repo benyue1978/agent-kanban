@@ -10,11 +10,8 @@ export interface WorkflowTransitionInput {
     policy?: ProjectPolicy;
     humanInstructionGranted?: boolean;
     requiredSectionsPresent?: boolean;
-    executionResultPresent?: boolean;
-    reviewGatePassed?: boolean;
     summaryPresent?: boolean;
-    dodCheckPresent?: boolean;
-    reviewRationalePresent?: boolean;
+    verificationEvidencePresent?: boolean;
 }
 export declare function canTransition(input: WorkflowTransitionInput): void;
 //# sourceMappingURL=workflow.d.ts.map

@@ -13,7 +13,6 @@ Cards move through the following states:
 - New
 - Ready
 - In Progress
-- In Review
 - Done
 
 V1 does not include a Blocked state.
@@ -27,7 +26,7 @@ The only real actor types in this system are:
 
 The system does not model a separate `reviewer` role as a first-class domain concept.
 
-A review gate is still required, but it is expressed as an allowed action performed by a human or an agent under project policy.
+Review is still required as completion discipline, but it is represented through summary quality, verification evidence, comments, and event history rather than a dedicated workflow state.
 
 ## Owner Definition
 
@@ -45,21 +44,6 @@ The `owner` does **not** mean:
 - a full list of every actor that touched the card
 
 Subagents are execution details and should not be represented as first-class owners in V1.
-
-## Review Gate
-
-In Review is a real gate, not a visual placeholder.
-
-A card should not move to Done merely because execution appears complete.
-
-The gate is passed by an allowed action from either:
-
-- a human
-- an agent
-
-Whether a given human or agent is allowed to pass the gate is controlled by project policy and backend rules, not by a dedicated card field.
-
-By default, owner and gate-passer should be treated as different actors unless a project explicitly allows self-review.
 
 ## Transition Table
 
@@ -93,7 +77,7 @@ Meaning:
 
 Required conditions:
 
-- owner must be set
+- owner must be set as part of the claim
 
 Who can trigger:
 
@@ -108,16 +92,17 @@ Required side effects:
 - record `state_changed`
 - record `owner_assigned` if owner changes in the same operation
 
-### In Progress → In Review
+### In Progress → Done
 
 Meaning:
 
-- execution work is complete enough for review
+- execution work is complete and verified enough to finish
 
 Required conditions:
 
 - owner exists
-- execution results are available in repo or referenced artifacts
+- Final Summary exists
+- verification evidence exists on the card timeline
 
 Who can trigger:
 
@@ -127,48 +112,7 @@ Who can trigger:
 Required side effects:
 
 - record `state_changed`
-
-### In Review → Done
-
-Meaning:
-
-- review is complete and the card is considered finished
-
-Required conditions:
-
-- Final Summary exists
-- DoD Check is filled or explicitly addressed
-- review gate is explicitly passed by an allowed human or agent action
-
-Who can trigger:
-
-- human allowed by project policy
-- agent allowed by project policy
-
-Required side effects:
-
-- record `state_changed`
-- record summary update if it happened as part of completion
-
-### In Review → In Progress
-
-Meaning:
-
-- review failed or further changes are required
-
-Required conditions:
-
-- review comments or rationale should exist
-
-Who can trigger:
-
-- human allowed by project policy
-- agent allowed by project policy
-
-Required side effects:
-
-- record `state_changed`
-- add comment or event indicating reason for return
+- preserve the verification comments or events that justify completion
 
 ## Optional Reopen Rules
 
@@ -192,8 +136,9 @@ The backend should reject transitions such as:
 - New → In Progress without first becoming Ready
 - Ready → Done
 - New → Done
-- In Review without owner
-- In Review → Done without Final Summary
+- In Progress → Done without owner
+- In Progress → Done without Final Summary
+- In Progress → Done without verification evidence
 
 ## Error Contract
 
@@ -204,7 +149,6 @@ Suggested stable error types:
 - `invalid_transition`
 - `missing_owner`
 - `missing_required_section`
-- `review_gate_not_passed`
 - `summary_required`
 - `forbidden_action`
 - `revision_conflict`

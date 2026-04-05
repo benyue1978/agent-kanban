@@ -1,0 +1,34 @@
+FROM node:24-bookworm-slim AS base
+
+ENV PNPM_HOME="/pnpm"
+ENV PATH="$PNPM_HOME:$PATH"
+
+RUN corepack enable
+RUN apt-get update \
+  && apt-get install -y --no-install-recommends openssl \
+  && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /app
+
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml tsconfig.base.json ./
+COPY apps/api/package.json apps/api/package.json
+COPY packages/contracts/package.json packages/contracts/package.json
+COPY packages/domain/package.json packages/domain/package.json
+COPY packages/card-markdown/package.json packages/card-markdown/package.json
+
+RUN pnpm install --frozen-lockfile --ignore-scripts
+
+COPY apps/api apps/api
+COPY packages/contracts packages/contracts
+COPY packages/domain packages/domain
+COPY packages/card-markdown packages/card-markdown
+
+RUN pnpm --filter @agent-kanban/contracts build \
+  && pnpm --filter @agent-kanban/card-markdown build \
+  && pnpm --filter @agent-kanban/domain build \
+  && pnpm --filter @agent-kanban/api prisma generate \
+  && pnpm --filter @agent-kanban/api build
+
+EXPOSE 3000
+
+CMD ["sh", "-lc", "pnpm --filter @agent-kanban/api prisma migrate deploy && node apps/api/dist/src/server.js"]

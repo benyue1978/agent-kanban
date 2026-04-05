@@ -4,9 +4,13 @@
   "packageManager": "pnpm@10.33.0",
   "scripts": {
     "check:tooling": "node scripts/check-tooling.mjs",
+    "build:all": "pnpm --filter @agent-kanban/contracts build && pnpm --filter @agent-kanban/card-markdown build && pnpm --filter @agent-kanban/domain build && pnpm --filter @agent-kanban/api build && pnpm --filter @agent-kanban/cli build && pnpm --filter @agent-kanban/web build && docker compose build",
     "db:up": "docker compose up -d postgres",
     "db:down": "docker compose down",
     "db:reset": "docker compose down -v",
+    "import:plan": "tsx scripts/import-plan-tasks.ts",
+    "start": "pnpm --filter @agent-kanban/contracts build && pnpm --filter @agent-kanban/cli build && docker compose up -d --build",
+    "stop": "docker compose down",
     "test": "node scripts/run-tests.mjs"
   },
   "devDependencies": {

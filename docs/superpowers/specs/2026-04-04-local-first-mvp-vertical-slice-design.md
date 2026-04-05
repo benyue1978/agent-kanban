@@ -8,7 +8,7 @@ This spec is for a local-first, single-project MVP that supports:
 
 - one backend API
 - one CLI for agent work
-- one web UI for human review and visibility
+- one web UI for human visibility and focused card actions
 - named local human and agent identities
 - a complete card lifecycle from `New` to `Done`
 
@@ -21,8 +21,8 @@ This slice must support one realistic end-to-end workflow:
 1. a human creates or refines a card until it is `Ready`
 2. an agent claims the card through the CLI
 3. the agent executes work in the repo and updates the card through the API
-4. the card moves to `In Review`
-5. a human reviews in the web UI and either sends the card back or passes it to `Done`
+4. verification evidence is recorded on the card timeline
+5. a human or owner completes the card from `In Progress` to `Done`
 
 ### In scope
 
@@ -32,7 +32,7 @@ This slice must support one realistic end-to-end workflow:
 - markdown-backed card content with protected headings
 - workflow enforcement and project policy enforcement in the backend
 - CLI commands for agent-heavy write operations
-- web UI for board, card detail, inbox, and review-oriented human writes
+- web UI for board, card detail, inbox, and focused human writes
 - bootstrap import of seed cards after the system is running
 
 ### Out of scope
@@ -318,7 +318,6 @@ Cards move through:
 - `New`
 - `Ready`
 - `In Progress`
-- `In Review`
 - `Done`
 
 ### Transition rules
@@ -355,55 +354,29 @@ Behavior:
 
 - assignment and transition happen atomically
 
-#### `In Progress -> In Review`
+#### `In Progress -> Done`
 
 Requires:
 
 - owner exists
-- execution result exists in repo or referenced artifact links
+- Final Summary exists
+- verification evidence exists on the card timeline
 
 Triggered by:
 
 - current owner
 - supervising human
 
-#### `In Review -> Done`
-
-Requires:
-
-- Final Summary exists
-- DoD Check is filled or explicitly addressed
-- review gate passed by an allowed actor
-
-Triggered by:
-
-- human allowed by project policy
-- agent only if `allow_agent_review` permits it
-
-#### `In Review -> In Progress`
-
-Requires:
-
-- review rationale recorded as a comment
-
-Purpose:
-
-- the single rework path in the MVP slice
-
 ### Project policy fields
 
 The project policy should stay small:
 
-- `allow_agent_review`
-- `allow_self_review`
 - `allow_agent_pick_unassigned_ready`
 - `default_selection_policy`
 - `allowed_transition_actors`
 
 Recommended defaults:
 
-- `allow_agent_review = false`
-- `allow_self_review = false`
 - `allow_agent_pick_unassigned_ready = false`
 - `default_selection_policy = priority_then_ready_age_then_updated_at`
 
@@ -440,7 +413,6 @@ The API must return stable error codes:
 - `missing_owner`
 - `missing_required_section`
 - `summary_required`
-- `review_gate_not_passed`
 - `forbidden_action`
 - `revision_conflict`
 - `claim_conflict`
@@ -541,8 +513,8 @@ Shows:
 - write `@mentions`
 - update priority
 - move `New -> Ready`
-- move `In Review -> In Progress`
-- move `In Review -> Done`
+- move `Ready -> In Progress`
+- move `In Progress -> Done`
 
 ### Explicitly deferred web writes
 
@@ -645,7 +617,7 @@ For:
 - card detail rendering
 - comment creation
 - inbox visibility
-- human review actions
+- human verification and completion actions
 
 ## Acceptance Criteria
 
@@ -655,10 +627,10 @@ The vertical slice is complete when all of the following are true:
 - a card can be created and refined to `Ready`
 - an agent can claim the card through the CLI
 - the agent can update markdown with revision safety
-- the agent can add comments and move the card to `In Review`
+- the agent can add progress and verification comments while working the card
 - a human can inspect the card in the browser
-- a human can either return the card to `In Progress` or complete it from `In Review`
-- `Done` is rejected without Final Summary and DoD Check
+- a human can complete the card from `In Progress` when summary and verification are present
+- `Done` is rejected without Final Summary and verification evidence
 - event history reflects the major workflow operations
 - mentions create inbox items with durable status
 - at least one bootstrap seed card can be imported into the running system

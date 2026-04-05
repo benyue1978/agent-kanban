@@ -28,166 +28,43 @@ describe("workflow", () => {
     ).toBe("invalid_transition");
   });
 
-  it("requires a summary before In Review to Done", () => {
+  it("requires required sections before Ready", () => {
     expect(
       getErrorCode(() =>
         canTransition({
-          from: "In Review",
-          to: "Done",
+          from: "New",
+          to: "Ready",
           actorKind: "human",
-          actorId: "human-1",
-          reviewGatePassed: true,
-          summaryPresent: false,
-          ownerId: "collaborator-1",
-        })
-      )
-    ).toBe("summary_required");
-  });
-
-  it("rejects omitted summary presence before In Review to Done", () => {
-    expect(
-      getErrorCode(() =>
-        canTransition({
-          from: "In Review",
-          to: "Done",
-          actorKind: "human",
-          actorId: "human-1",
-          reviewGatePassed: true,
-          ownerId: "collaborator-1",
-        })
-      )
-    ).toBe("summary_required");
-  });
-
-  it("requires the review gate before In Review to Done", () => {
-    expect(
-      getErrorCode(() =>
-        canTransition({
-          from: "In Review",
-          to: "Done",
-          actorKind: "human",
-          actorId: "human-1",
-          reviewGatePassed: false,
-          summaryPresent: true,
-          dodCheckPresent: true,
-          ownerId: "collaborator-1",
-        })
-      )
-    ).toBe("review_gate_not_passed");
-  });
-
-  it("rejects omitted review gate presence before In Review to Done", () => {
-    expect(
-      getErrorCode(() =>
-        canTransition({
-          from: "In Review",
-          to: "Done",
-          actorKind: "human",
-          actorId: "human-1",
-          summaryPresent: true,
-          dodCheckPresent: true,
-          ownerId: "collaborator-1",
-        })
-      )
-    ).toBe("review_gate_not_passed");
-  });
-
-  it("rejects agent reopen when policy forbids agent review", () => {
-    expect(
-      getErrorCode(() =>
-        canTransition({
-          from: "In Review",
-          to: "In Progress",
-          actorKind: "agent",
-          actorId: "agent-1",
-          ownerId: "collaborator-1",
-          reviewRationalePresent: true,
-          policy: {
-            ...defaultProjectPolicy,
-            allowAgentReview: false,
-          },
-        })
-      )
-    ).toBe("forbidden_action");
-  });
-
-  it("rejects forbidden review completion before missing summary", () => {
-    expect(
-      getErrorCode(() =>
-        canTransition({
-          from: "In Review",
-          to: "Done",
-          actorKind: "agent",
-          actorId: "agent-1",
-          ownerId: "collaborator-1",
-          policy: {
-            ...defaultProjectPolicy,
-            allowAgentReview: false,
-          },
-        })
-      )
-    ).toBe("forbidden_action");
-  });
-
-  it("rejects forbidden reopen before missing rationale", () => {
-    expect(
-      getErrorCode(() =>
-        canTransition({
-          from: "In Review",
-          to: "In Progress",
-          actorKind: "agent",
-          actorId: "agent-1",
-          ownerId: "collaborator-1",
-          policy: {
-            ...defaultProjectPolicy,
-            allowAgentReview: false,
-          },
-        })
-      )
-    ).toBe("forbidden_action");
-  });
-
-  it("rejects missing actor identity on review to done transitions", () => {
-    expect(
-      getErrorCode(() =>
-        canTransition({
-          from: "In Review",
-          to: "Done",
-          actorKind: "agent",
-          ownerId: "collaborator-1",
-          reviewGatePassed: true,
-          summaryPresent: true,
-        })
-      )
-    ).toBe("forbidden_action");
-  });
-
-  it("rejects missing actor identity on review reopen transitions", () => {
-    expect(
-      getErrorCode(() =>
-        canTransition({
-          from: "In Review",
-          to: "In Progress",
-          actorKind: "agent",
-          ownerId: "collaborator-1",
-          reviewRationalePresent: true,
-        })
-      )
-    ).toBe("forbidden_action");
-  });
-
-  it("rejects omitted review rationale after authorization passes", () => {
-    expect(
-      getErrorCode(() =>
-        canTransition({
-          from: "In Review",
-          to: "In Progress",
-          actorKind: "human",
-          actorId: "human-1",
-          ownerId: "collaborator-1",
         })
       )
     ).toBe("missing_required_section");
+  });
+
+  it("rejects agent readying a card without explicit human instruction", () => {
+    expect(
+      getErrorCode(() =>
+        canTransition({
+          from: "New",
+          to: "Ready",
+          actorKind: "agent",
+          titlePresent: true,
+          requiredSectionsPresent: true,
+        })
+      )
+    ).toBe("forbidden_action");
+  });
+
+  it("allows agent readying a card with explicit human instruction", () => {
+    expect(() =>
+      canTransition({
+        from: "New",
+        to: "Ready",
+        actorKind: "agent",
+        titlePresent: true,
+        requiredSectionsPresent: true,
+        humanInstructionGranted: true,
+      })
+    ).not.toThrow();
   });
 
   it("rejects agent pickup of an unassigned Ready card when policy forbids it", () => {
@@ -206,22 +83,80 @@ describe("workflow", () => {
     ).toBe("forbidden_action");
   });
 
-  it("rejects an agent starting a card already assigned to someone else", () => {
+  it("allows a valid claim from Ready to In Progress", () => {
+    expect(() =>
+      canTransition({
+        from: "Ready",
+        to: "In Progress",
+        actorKind: "human",
+        ownerId: null,
+        targetOwnerId: "human-1",
+      })
+    ).not.toThrow();
+  });
+
+  it("requires summary before In Progress to Done", () => {
     expect(
       getErrorCode(() =>
         canTransition({
-          from: "Ready",
-          to: "In Progress",
-          actorKind: "agent",
-          actorId: "agent-1",
+          from: "In Progress",
+          to: "Done",
+          actorKind: "human",
+          actorId: "human-1",
           ownerId: "human-1",
-          policy: {
-            ...defaultProjectPolicy,
-            allowAgentPickUnassignedReady: true,
-          },
+          verificationPresent: true,
+          summaryPresent: false,
         })
       )
-    ).toBe("forbidden_action");
+    ).toBe("summary_required");
+  });
+
+  it("requires verification evidence before completion", () => {
+    expect(
+      getErrorCode(() =>
+        canTransition({
+          from: "In Progress",
+          to: "Done",
+          actorKind: "human",
+          actorId: "human-1",
+          ownerId: "human-1",
+          summaryPresent: true,
+          dodCheckPresent: true,
+          verificationEvidencePresent: false,
+        })
+      )
+    ).toBe("missing_required_section");
+  });
+
+  it("rejects completion without an owner", () => {
+    expect(
+      getErrorCode(() =>
+        canTransition({
+          from: "In Progress",
+          to: "Done",
+          actorKind: "human",
+          ownerId: null,
+          summaryPresent: true,
+          dodCheckPresent: true,
+          verificationEvidencePresent: true,
+        })
+      )
+    ).toBe("missing_owner");
+  });
+
+  it("allows valid completion from In Progress to Done", () => {
+    expect(() =>
+      canTransition({
+        from: "In Progress",
+        to: "Done",
+        actorKind: "agent",
+        actorId: "agent-1",
+        ownerId: "agent-1",
+        summaryPresent: true,
+        dodCheckPresent: true,
+        verificationEvidencePresent: true,
+      })
+    ).not.toThrow();
   });
 
   it("policy helper rejects agent claim of another owner's card", () => {
@@ -241,206 +176,55 @@ describe("workflow", () => {
     ).toBe("forbidden_action");
   });
 
-  it("rejects omitted required sections before Ready", () => {
-    expect(
-      getErrorCode(() =>
-        canTransition({
-          from: "New",
-          to: "Ready",
-          actorKind: "human",
-        })
-      )
-    ).toBe("missing_required_section");
-  });
-
-  it("rejects readying a card when the title is missing", () => {
-    expect(
-      getErrorCode(() =>
-        canTransition({
-          from: "New",
-          to: "Ready",
-          actorKind: "human",
-          titlePresent: false,
-          requiredSectionsPresent: true,
-        })
-      )
-    ).toBe("missing_required_section");
-  });
-
-  it("rejects agent readying a card without explicit human instruction", () => {
-    expect(
-      getErrorCode(() =>
-        canTransition({
-          from: "New",
-          to: "Ready",
-          actorKind: "agent",
-          actorId: "agent-1",
-          titlePresent: true,
-          requiredSectionsPresent: true,
-        })
-      )
-    ).toBe("forbidden_action");
-  });
-
-  it("rejects review entry when no execution result is recorded", () => {
-    expect(
-      getErrorCode(() =>
-        canTransition({
-          from: "In Progress",
-          to: "In Review",
-          actorKind: "human",
-          actorId: "human-1",
-          ownerId: "human-1",
-        })
-      )
-    ).toBe("missing_required_section");
-  });
-
-  it("rejects unauthorized review entry before checking execution results", () => {
-    expect(
-      getErrorCode(() =>
-        canTransition({
-          from: "In Progress",
-          to: "In Review",
-          actorKind: "agent",
-          actorId: "agent-1",
-          ownerId: "human-1",
-          executionResultPresent: false,
-        })
-      )
-    ).toBe("forbidden_action");
-  });
-
-  it("allows agent readying a card with explicit human instruction", () => {
-    expect(() =>
-      canTransition({
-        from: "New",
-        to: "Ready",
-        actorKind: "agent",
-        actorId: "agent-1",
-        titlePresent: true,
-        requiredSectionsPresent: true,
-        humanInstructionGranted: true,
-      })
-    ).not.toThrow();
-  });
-
-  it("allows a valid claim from Ready to In Progress", () => {
-    expect(() =>
-      canTransition({
-        from: "Ready",
-        to: "In Progress",
-        actorKind: "agent",
-        actorId: "agent-1",
-        ownerId: null,
-        targetOwnerId: "agent-1",
-        policy: {
-          ...defaultProjectPolicy,
-          allowAgentPickUnassignedReady: true,
-        },
-      })
-    ).not.toThrow();
-  });
-
-  it("allows an agent claim under explicit human instruction", () => {
-    expect(() =>
-      canTransition({
-        from: "Ready",
-        to: "In Progress",
-        actorKind: "agent",
-        actorId: "agent-1",
-        ownerId: null,
-        targetOwnerId: "agent-1",
-        humanInstructionGranted: true,
-        policy: defaultProjectPolicy,
-      })
-    ).not.toThrow();
-  });
-
-  it("allows moving a card into review when an execution result exists", () => {
-    expect(() =>
-      canTransition({
-        from: "In Progress",
-        to: "In Review",
-        actorKind: "human",
-        actorId: "human-1",
-        ownerId: "human-1",
-        executionResultPresent: true,
-      })
-    ).not.toThrow();
-  });
-
-  it("allows a valid review completion", () => {
-    expect(() =>
-      canTransition({
-        from: "In Review",
-        to: "Done",
-        actorKind: "human",
-        actorId: "human-1",
-        ownerId: "collaborator-1",
-        reviewGatePassed: true,
-        summaryPresent: true,
-        dodCheckPresent: true,
-      })
-    ).not.toThrow();
-  });
-
-  it("allows a valid reopen from In Review to In Progress", () => {
-    expect(() =>
-      canTransition({
-        from: "In Review",
-        to: "In Progress",
-        actorKind: "human",
-        actorId: "human-1",
-        ownerId: "collaborator-1",
-        reviewRationalePresent: true,
-      })
-    ).not.toThrow();
-  });
-
-  it("rejects self-review when allowSelfReview is false", () => {
-    expect(
-      getErrorCode(() =>
-        canTransition({
-          from: "In Review",
-          to: "Done",
-          actorKind: "agent",
-          actorId: "agent-1",
-          ownerId: "agent-1",
-          reviewGatePassed: true,
-          summaryPresent: true,
-          policy: {
-            ...defaultProjectPolicy,
-            allowAgentReview: true,
-            allowSelfReview: false,
-          },
-        })
-      )
-    ).toBe("forbidden_action");
-  });
-
-  it("rejects completion when DoD Check is missing", () => {
-    expect(
-      getErrorCode(() =>
-        canTransition({
-          from: "In Review",
-          to: "Done",
-          actorKind: "human",
-          actorId: "human-1",
-          ownerId: "collaborator-1",
-          reviewGatePassed: true,
-          summaryPresent: true,
-        })
-      )
-    ).toBe("summary_required");
-  });
-
   it("sorts Ready cards by priority then age then updated time", () => {
-    const result = sortReadyCards([
-      { id: "b", priority: 2, readyAt: 2, updatedAt: 20 },
-      { id: "a", priority: 1, readyAt: 1, updatedAt: 10 },
+    const cards = sortReadyCards([
+      {
+        id: "card-3",
+        projectId: "project-1",
+        sourcePlanPath: null,
+        sourceSpecPath: null,
+        sourceTaskId: null,
+        title: "Third",
+        state: "Ready",
+        owner: null,
+        priority: 2,
+        revision: 1,
+        readyAt: "2026-04-05T00:00:03.000Z",
+        updatedAt: "2026-04-05T00:00:03.000Z",
+        summaryMd: null,
+      },
+      {
+        id: "card-1",
+        projectId: "project-1",
+        sourcePlanPath: null,
+        sourceSpecPath: null,
+        sourceTaskId: null,
+        title: "First",
+        state: "Ready",
+        owner: null,
+        priority: 1,
+        revision: 1,
+        readyAt: "2026-04-05T00:00:01.000Z",
+        updatedAt: "2026-04-05T00:00:05.000Z",
+        summaryMd: null,
+      },
+      {
+        id: "card-2",
+        projectId: "project-1",
+        sourcePlanPath: null,
+        sourceSpecPath: null,
+        sourceTaskId: null,
+        title: "Second",
+        state: "Ready",
+        owner: null,
+        priority: 1,
+        revision: 1,
+        readyAt: "2026-04-05T00:00:02.000Z",
+        updatedAt: "2026-04-05T00:00:02.000Z",
+        summaryMd: null,
+      },
     ]);
 
-    expect(result[0]?.id).toBe("a");
+    expect(cards.map((card) => card.id)).toEqual(["card-1", "card-2", "card-3"]);
   });
 });

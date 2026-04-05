@@ -1,4 +1,10 @@
-export { getProtectedSections, type ProtectedSections } from "./anchors.js";
+export {
+  getProtectedSections,
+  getSourceTaskMetadata,
+  upsertSourceTaskMetadata,
+  type ProtectedSections,
+  type SourceTaskMetadata,
+} from "./anchors.js";
 export {
   appendCompletionSummary,
   SummaryValidationError,

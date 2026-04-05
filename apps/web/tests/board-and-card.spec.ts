@@ -1,7 +1,9 @@
 import { expect, test } from "@playwright/test";
 
+const apiBaseUrl = process.env.PLAYWRIGHT_API_BASE_URL ?? "http://127.0.0.1:3101";
+
 test("board and card detail render current process state", async ({ page }) => {
-  const projectResponse = await page.request.post("http://127.0.0.1:3001/projects", {
+  const projectResponse = await page.request.post(`${apiBaseUrl}/projects`, {
     data: {
       name: "agent-kanban",
       repoUrl: "https://example.com/repo.git",
@@ -9,7 +11,7 @@ test("board and card detail render current process state", async ({ page }) => {
   });
   const project = await projectResponse.json();
 
-  await page.request.post("http://127.0.0.1:3001/cards", {
+  await page.request.post(`${apiBaseUrl}/cards`, {
     data: {
       projectId: project.project.id,
       title: "Backend skeleton",
@@ -38,6 +40,7 @@ Render the board and card detail through the web app.
 
   await page.goto(`/projects/${project.project.id}`);
   await expect(page.getByRole("heading", { name: "Ready" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "In Progress" })).toBeVisible();
   await page.getByRole("link", { name: /Backend skeleton/ }).click();
   await page.waitForURL(/\/cards\//);
   await expect(page.getByRole("heading", { name: "Final Summary", level: 3 })).toBeVisible();

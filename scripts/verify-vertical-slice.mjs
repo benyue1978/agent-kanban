@@ -56,7 +56,7 @@ runStep("web smoke tests", "pnpm", [
   "playwright",
   "test",
   "--grep",
-  "board and card detail|human can review",
+  "board and card detail|human can add verification evidence|human inbox, readying, and completion actions",
 ]);
 
 console.log("\n[verify] vertical slice verification passed");

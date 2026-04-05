@@ -87,18 +87,16 @@ Definition of Done should:
 
 - be explicit
 - be testable where possible
-- guide execution and review
+- guide execution and completion
 
-## DoD Check and review gate
+## Completion Summary
 
-Before a card moves from In Review to Done:
+Before a card moves from In Progress to Done:
 
 - Final Summary must exist
-- DoD Check must be filled or explicitly addressed
+- verification evidence must be present on the card timeline
 
-DoD Check does not have to be a pure checkbox-only mechanism forever, but in V1 it should function as the visible review checklist for completion.
-
-A reviewer action should not mean only “summary exists”. It should mean the card’s completion criteria have been checked.
+`DoD Check` remains a useful optional section inside Final Summary, but it is no longer a hard workflow gate in V1.
 
 ## Relationship to Repo
 

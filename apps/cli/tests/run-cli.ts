@@ -10,7 +10,8 @@ export interface CliResult {
 
 export async function runCli(
   args: string[],
-  env: NodeJS.ProcessEnv = {}
+  env: NodeJS.ProcessEnv = {},
+  options: { cwd?: string } = {}
 ): Promise<CliResult> {
   const cliEntry = path.resolve(
     path.dirname(fileURLToPath(import.meta.url)),
@@ -19,6 +20,7 @@ export async function runCli(
 
   return await new Promise((resolve, reject) => {
     const child = spawn(process.execPath, [cliEntry, ...args], {
+      cwd: options.cwd,
       env: {
         ...process.env,
         ...env,

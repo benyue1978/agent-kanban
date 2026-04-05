@@ -4,7 +4,6 @@ export declare const CardState: {
     readonly New: "New";
     readonly Ready: "Ready";
     readonly InProgress: "In Progress";
-    readonly InReview: "In Review";
     readonly Done: "Done";
 };
 export type CardStateValue = (typeof CardState)[keyof typeof CardState];
@@ -14,6 +13,7 @@ export declare const CommentKind: {
     readonly Question: "question";
     readonly Decision: "decision";
     readonly Note: "note";
+    readonly Verification: "verification";
 };
 export type CommentKindValue = (typeof CommentKind)[keyof typeof CommentKind];
 export declare const InboxItemStatus: {
@@ -46,6 +46,9 @@ export interface InboxItem {
 interface CardReadBase {
     id: string;
     projectId: string;
+    sourcePlanPath: string | null;
+    sourceSpecPath: string | null;
+    sourceTaskId: string | null;
     title: string;
     priority: number | null;
     revision: number;
@@ -61,35 +64,26 @@ interface CardReadReady extends CardReadBase {
     owner: ActorRef | null;
     summaryMd: null;
 }
-interface CardReadInReview extends CardReadBase {
-    state: typeof CardState.InReview;
-    owner: ActorRef;
-    summaryMd: null;
-}
-interface CardReadInReviewWithSummary extends CardReadBase {
-    state: typeof CardState.InReview;
-    owner: ActorRef;
-    summaryMd: string;
-}
 interface CardReadInProgress extends CardReadBase {
     state: typeof CardState.InProgress;
     owner: ActorRef;
-    summaryMd: null;
+    summaryMd: string | null;
 }
 interface CardReadDone extends CardReadBase {
     state: typeof CardState.Done;
     owner: ActorRef | null;
     summaryMd: string;
 }
-export type CardListItem = CardReadNew | CardReadReady | CardReadInReview | CardReadInReviewWithSummary | CardReadInProgress | CardReadDone;
+export type CardListItem = CardReadNew | CardReadReady | CardReadInProgress | CardReadDone;
 export type CardDetail = CardListItem & {
     descriptionMd: string;
     comments: CommentRecord[];
 };
-export type SummaryPresentCard = Extract<CardDetail, {
-    state: typeof CardState.InReview;
+export type SummaryPresentCard = (Extract<CardDetail, {
+    state: typeof CardState.InProgress;
+}> & {
     summaryMd: string;
-}> | Extract<CardDetail, {
+}) | Extract<CardDetail, {
     state: typeof CardState.Done;
 }>;
 export type ClaimedCardDetail = Extract<CardDetail, {
@@ -152,6 +146,10 @@ export interface CreateCardRequest {
     descriptionMd: string;
     priority?: number | null;
     actorId?: string;
+    sourcePlanPath?: string | null;
+    sourceSpecPath?: string | null;
+    sourceTaskFingerprint?: string | null;
+    sourceTaskId?: string | null;
 }
 export interface CreateCardResponse {
     card: CardDetail;
@@ -171,11 +169,11 @@ interface SetCardStateRequestBase {
     actorId?: string;
 }
 export type SetCardStateRequest = (SetCardStateRequestBase & {
-    to: NonClaimCardStateValue;
-    mode?: never;
-}) | (SetCardStateRequestBase & {
+    ownerId: string;
     to: typeof CardState.InProgress;
-    mode: "send_back";
+}) | (SetCardStateRequestBase & {
+    ownerId?: string;
+    to: NonClaimCardStateValue;
 });
 export interface SetCardStateResponse {
     card: CardDetail;
@@ -206,6 +204,28 @@ export interface AppendCardSummaryRequest {
 }
 export interface AppendCardSummaryResponse {
     card: SummaryPresentCard;
+}
+export interface ImportPlanTaskItem {
+    sourcePlanPath: string;
+    sourceSpecPath?: string | null;
+    sourceTaskFingerprint: string;
+    sourceTaskId: string;
+    title: string;
+    descriptionMd: string;
+    priority?: number | null;
+}
+export interface ImportPlanTasksRequest {
+    actorId?: string;
+    tasks: ImportPlanTaskItem[];
+}
+export interface ImportPlanTaskResult {
+    cardId: string;
+    sourceTaskId: string;
+    outcome: "created" | "updated" | "unchanged" | "protected";
+    state: CardStateValue;
+}
+export interface ImportPlanTasksResponse {
+    results: ImportPlanTaskResult[];
 }
 export interface AddCommentRequest {
     cardId: string;

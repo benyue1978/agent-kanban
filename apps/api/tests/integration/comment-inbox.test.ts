@@ -12,8 +12,6 @@ async function seedCommentFixture(client: PrismaClient): Promise<void> {
       name: "agent-kanban",
       repoUrl: "https://example.com/repo.git",
       policyJson: {
-        allowAgentReview: false,
-        allowSelfReview: false,
         allowAgentPickUnassignedReady: true,
         defaultSelectionPolicy: "priority_then_ready_age_then_updated_at",
       },
@@ -62,7 +60,7 @@ Implement Task 7
 - [ ] comments
 - [ ] inbox`,
       revision: 3,
-      state: "In Review",
+      state: "In Progress",
       ownerId: "agent-main",
     },
   });
@@ -132,7 +130,7 @@ describe.sequential("comment and inbox routes", () => {
       url: "/cards/card-1/assign-owner",
       payload: {
         revision: 3,
-        actorId: "human-reviewer",
+        actorId: "human-song",
         ownerId: "agent-peer",
       },
     });
@@ -142,19 +140,20 @@ describe.sequential("comment and inbox routes", () => {
       method: "POST",
       url: "/cards/card-1/set-state",
       payload: {
-        actorId: "human-reviewer",
+        actorId: "human-song",
         revision: assignResponse.json().card.revision,
-        to: "In Progress",
+        to: "Done",
       },
     });
-    expect(stateResponse.statusCode).toBe(200);
+    expect(stateResponse.statusCode).toBe(400);
+    expect(stateResponse.json().error.code).toBe("summary_required");
 
     const markdownResponse = await app.inject({
       method: "POST",
       url: "/cards/card-1/update-markdown",
       payload: {
         actorId: "agent-peer",
-        revision: stateResponse.json().card.revision,
+        revision: assignResponse.json().card.revision,
         descriptionMd: `# Review-ready API task
 
 ## Goal
@@ -186,6 +185,17 @@ Implement Task 7 completely
     });
     expect(summaryResponse.statusCode).toBe(200);
 
+    const verificationComment = await app.inject({
+      method: "POST",
+      url: "/cards/card-1/comments",
+      payload: {
+        authorId: "human-reviewer",
+        kind: "verification",
+        body: "Verified summary and inbox behavior.",
+      },
+    });
+    expect(verificationComment.statusCode).toBe(201);
+
     const commentResponse = await app.inject({
       method: "POST",
       url: "/cards/card-1/comments",
@@ -196,6 +206,17 @@ Implement Task 7 completely
       },
     });
     expect(commentResponse.statusCode).toBe(201);
+
+    const completeResponse = await app.inject({
+      method: "POST",
+      url: "/cards/card-1/set-state",
+      payload: {
+        actorId: "human-reviewer",
+        revision: summaryResponse.json().card.revision,
+        to: "Done",
+      },
+    });
+    expect(completeResponse.statusCode).toBe(200);
 
     const events = await prisma.event.findMany({
       where: {
@@ -208,10 +229,11 @@ Implement Task 7 completely
 
     expect(events.map((event) => event.type)).toEqual([
       "owner_assigned",
-      "state_changed",
       "markdown_updated",
       "summary_updated",
       "comment_added",
+      "comment_added",
+      "state_changed",
     ]);
   });
 });

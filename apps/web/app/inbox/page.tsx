@@ -4,6 +4,8 @@ import { Card, CardContent } from "@/components/ui/card";
 import { fetchInbox } from "@/lib/api";
 import { getHumanActorId, humanActorConfigurationMessage } from "@/lib/config";
 
+export const dynamic = "force-dynamic";
+
 export default async function InboxPage() {
   const humanActorId = getHumanActorId();
 
@@ -43,7 +45,9 @@ export default async function InboxPage() {
               <div className="text-[11px] font-medium uppercase tracking-[0.28em] text-primary">
                 Current Human Actor
               </div>
-              <div className="font-mono text-lg text-foreground">{humanActorId}</div>
+              <div data-testid="current-human-actor" className="font-mono text-lg text-foreground">
+                {humanActorId}
+              </div>
             </div>
             <div className="text-sm leading-6 text-muted-foreground">
               {items.length} mention{items.length === 1 ? "" : "s"} in queue.
