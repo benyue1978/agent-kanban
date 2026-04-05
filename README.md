@@ -215,6 +215,20 @@ Build the CLI:
 pnpm --filter @agent-kanban/cli build
 ```
 
+Install the `kanban` command globally on the current machine:
+
+```bash
+pnpm cli:install
+```
+
+Remove the global `kanban` command again:
+
+```bash
+pnpm cli:uninstall
+```
+
+If `pnpm cli:install` fails because your shell does not know the pnpm global bin directory yet, run `pnpm setup`, restart the shell, and retry. Global install is a one-time machine setup for agent workflows. It is intentionally separate from `pnpm start` so starting the stack does not mutate global shell state.
+
 The web UI is meant for humans. The CLI is meant for agents and automation. Both should rely on the same backend behavior rather than duplicating workflow logic.
 
 ## Using The System
@@ -238,7 +252,19 @@ For plan-driven work, the intended loop is:
 2. ask an agent to parse the plan markdown and create cards task-by-task
 3. execute from cards while treating the linked plan/spec docs as planning truth
 
-Once the CLI is built, invoke it directly or link it globally:
+For a one-time machine-level install of the `kanban` command:
+
+```bash
+pnpm cli:install
+```
+
+After that, use the global command:
+
+```bash
+kanban --help
+```
+
+If you do not want a global install, invoke the built CLI directly:
 
 ```bash
 node apps/cli/dist/index.js --help

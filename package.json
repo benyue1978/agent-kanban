@@ -12,6 +12,8 @@
     "db:up:dev": "node scripts/compose-stack.mjs dev up -d postgres",
     "db:down:dev": "node scripts/compose-stack.mjs dev down",
     "db:reset:dev": "node scripts/compose-stack.mjs dev down -v",
+    "cli:install": "pnpm check:install && node scripts/cli-global.mjs install",
+    "cli:uninstall": "node scripts/cli-global.mjs uninstall",
     "import:plan": "tsx scripts/import-plan-tasks.ts",
     "start": "pnpm check:install && pnpm --filter @agent-kanban/contracts build && pnpm --filter @agent-kanban/cli build && node scripts/compose-stack.mjs prod up -d --build",
     "start:dev": "pnpm check:install && pnpm --filter @agent-kanban/contracts build && pnpm --filter @agent-kanban/cli build && node scripts/compose-stack.mjs dev up -d --build",
