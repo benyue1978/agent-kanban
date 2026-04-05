@@ -28,7 +28,7 @@ services:
       DATABASE_URL: postgresql://${POSTGRES_USER:-agent_kanban}:${POSTGRES_PASSWORD:-agent_kanban}@postgres:5432/${POSTGRES_DB:-agent_kanban}?schema=public
       PORT: 3000
     ports:
-      - "3001:3000"
+      - "${API_PORT:-3001}:3000"
   web:
     build:
       context: .
@@ -41,7 +41,7 @@ services:
       KANBAN_API_URL: http://api:3000
       KANBAN_HUMAN_ACTOR_ID: human-reviewer
     ports:
-      - "3000:3000"
+      - "${WEB_PORT:-3000}:3000"
 
 volumes:
   postgres-data:

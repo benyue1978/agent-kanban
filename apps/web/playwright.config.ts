@@ -17,11 +17,11 @@ export default defineConfig({
   },
   webServer: [
     {
-      command: "pnpm --filter @agent-kanban/api dev",
+      command: "pnpm --filter @agent-kanban/api prisma migrate deploy && pnpm --filter @agent-kanban/api dev",
       cwd: repoRoot,
       env: {
         DATABASE_URL:
-          "postgresql://agent_kanban:agent_kanban@localhost:5433/agent_kanban?schema=public",
+          "postgresql://agent_kanban:agent_kanban@localhost:5434/agent_kanban_dev?schema=public",
         PORT: apiPort,
       },
       port: Number(apiPort),

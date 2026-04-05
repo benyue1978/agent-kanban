@@ -4,7 +4,7 @@ import process from "node:process";
 
 const defaultDatabaseUrl =
   process.env.DATABASE_URL ??
-  "postgresql://agent_kanban:agent_kanban@localhost:5433/agent_kanban";
+  "postgresql://agent_kanban:agent_kanban@localhost:5434/agent_kanban_dev";
 
 function runStep(label, command, args, options = {}) {
   console.log(`\n[verify] ${label}`);

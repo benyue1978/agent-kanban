@@ -72,48 +72,85 @@ Install workspace dependencies first:
 pnpm install
 ```
 
-Then copy the root env file and adjust if needed:
+Then copy the production-like root env file and the separate development env file:
 
 ```bash
 cp .env.example .env
+cp .env.dev.example .env.dev
 ```
 
 ### 3. Configure environment
 
-The current verification scripts assume a local Postgres exposed on host port `5433`, so align `DATABASE_URL` and `POSTGRES_PORT` accordingly if that port is already in use on your machine.
+This repo uses two local environments:
 
-Example:
+- `.env` for the production-like local stack started by `pnpm start`
+- `.env.dev` for development, tests, and e2e started by `pnpm start:dev` and `pnpm test`
+
+Keep them on different ports and different database names so development never writes into the production-like stack.
+
+Example `.env`:
 
 ```env
+COMPOSE_PROJECT_NAME=agent-kanban-prod
 DATABASE_URL=postgresql://agent_kanban:agent_kanban@localhost:5433/agent_kanban?schema=public
 POSTGRES_DB=agent_kanban
 POSTGRES_USER=agent_kanban
 POSTGRES_PASSWORD=agent_kanban
 POSTGRES_PORT=5433
+API_PORT=3001
+WEB_PORT=3000
+```
+
+Example `.env.dev`:
+
+```env
+COMPOSE_PROJECT_NAME=agent-kanban-dev
+DATABASE_URL=postgresql://agent_kanban:agent_kanban@localhost:5434/agent_kanban_dev?schema=public
+POSTGRES_DB=agent_kanban_dev
+POSTGRES_USER=agent_kanban
+POSTGRES_PASSWORD=agent_kanban
+POSTGRES_PORT=5434
+API_PORT=3101
+WEB_PORT=3100
 ```
 
 ### 4. Start everything
+
+Production-like local stack:
 
 ```bash
 pnpm start
 ```
 
-That command does three things:
+Development stack:
+
+```bash
+pnpm start:dev
+```
+
+Those commands do three things:
 
 - builds the shared contracts and host CLI
 - builds the Docker images
 - starts `postgres`, `api`, and `web` with Docker Compose
 
-Default local endpoints:
+Production-like local endpoints from `.env`:
 
 - web UI: `http://127.0.0.1:3000`
 - API: `http://127.0.0.1:3001`
+
+Development endpoints from `.env.dev`:
+
+- web UI: `http://127.0.0.1:3100`
+- API: `http://127.0.0.1:3101`
 
 ### 5. Run the full test suite
 
 ```bash
 pnpm test
 ```
+
+`pnpm test` always loads `.env.dev` and should be treated as a development-only flow.
 
 ### 6. Seed the initial historical cards
 
@@ -124,18 +161,21 @@ node scripts/backfill-initial-cards.ts
 ### 6. Run the full vertical-slice verifier
 
 ```bash
-node scripts/verify-vertical-slice.mjs
+pnpm verify:dev
 ```
+
+`pnpm verify:dev` also targets `.env.dev`.
 
 ### 7. Stop the stack when done
 
 ```bash
 pnpm stop
+pnpm stop:dev
 ```
 
 ## Running The Apps
 
-The default path is `pnpm start`. If you need the lower-level commands:
+The default production-like path is `pnpm start`. For isolated development, use `pnpm start:dev`. If you need the lower-level commands:
 
 Build every local package and the Docker images:
 
@@ -143,10 +183,16 @@ Build every local package and the Docker images:
 pnpm build:all
 ```
 
-Start only the Compose stack:
+Start only the production-like Compose stack:
 
 ```bash
-docker compose up -d --build
+node scripts/compose-stack.mjs prod up -d --build
+```
+
+Start only the development Compose stack:
+
+```bash
+node scripts/compose-stack.mjs dev up -d --build
 ```
 
 Start the API directly on the host:
@@ -154,6 +200,8 @@ Start the API directly on the host:
 ```bash
 pnpm --filter @agent-kanban/api dev
 ```
+
+When running host processes manually during development, point them at `.env.dev` so they target the isolated dev database and ports.
 
 Start the web app:
 

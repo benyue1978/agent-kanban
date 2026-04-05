@@ -8,7 +8,7 @@ import type {
   ProjectListResponse,
 } from "@agent-kanban/contracts";
 
-const apiBaseUrl = process.env.KANBAN_API_URL ?? "http://127.0.0.1:3001";
+const apiBaseUrl = process.env.KANBAN_API_URL ?? "http://127.0.0.1:3101";
 
 async function requestApi(path: string, init?: RequestInit): Promise<Response> {
   return await fetch(new URL(path, apiBaseUrl), {

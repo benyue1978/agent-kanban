@@ -7,7 +7,7 @@ coverage/
 .cache/
 .parcel-cache/
 .env*
-!.env.example
+!.env*.example
 **/generated/prisma/
 **/.prisma/
 **/playwright-report/

@@ -2,7 +2,7 @@ import { execFileSync } from "node:child_process";
 
 const databaseUrl =
   process.env.WEB_TEST_DATABASE_URL ??
-  "postgresql://agent_kanban:agent_kanban@localhost:5433/agent_kanban";
+  "postgresql://agent_kanban:agent_kanban@localhost:5434/agent_kanban_dev";
 
 function runSql(sql: string): void {
   execFileSync("psql", [databaseUrl, "-v", "ON_ERROR_STOP=1", "-c", sql], {

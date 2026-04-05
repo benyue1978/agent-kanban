@@ -5,14 +5,20 @@
   "scripts": {
     "check:tooling": "node scripts/check-tooling.mjs",
     "check:install": "node scripts/check-install.mjs",
-    "build:all": "pnpm check:install && pnpm --filter @agent-kanban/contracts build && pnpm --filter @agent-kanban/card-markdown build && pnpm --filter @agent-kanban/domain build && pnpm --filter @agent-kanban/api build && pnpm --filter @agent-kanban/cli build && pnpm --filter @agent-kanban/web build && docker compose build",
-    "db:up": "docker compose up -d postgres",
-    "db:down": "docker compose down",
-    "db:reset": "docker compose down -v",
+    "build:all": "pnpm check:install && pnpm --filter @agent-kanban/contracts build && pnpm --filter @agent-kanban/card-markdown build && pnpm --filter @agent-kanban/domain build && pnpm --filter @agent-kanban/api build && pnpm --filter @agent-kanban/cli build && pnpm --filter @agent-kanban/web build && node scripts/compose-stack.mjs prod build",
+    "db:up": "node scripts/compose-stack.mjs prod up -d postgres",
+    "db:down": "node scripts/compose-stack.mjs prod down",
+    "db:reset": "node scripts/compose-stack.mjs prod down -v",
+    "db:up:dev": "node scripts/compose-stack.mjs dev up -d postgres",
+    "db:down:dev": "node scripts/compose-stack.mjs dev down",
+    "db:reset:dev": "node scripts/compose-stack.mjs dev down -v",
     "import:plan": "tsx scripts/import-plan-tasks.ts",
-    "start": "pnpm check:install && pnpm --filter @agent-kanban/contracts build && pnpm --filter @agent-kanban/cli build && docker compose up -d --build",
-    "stop": "docker compose down",
-    "test": "pnpm check:install && node scripts/run-tests.mjs"
+    "start": "pnpm check:install && pnpm --filter @agent-kanban/contracts build && pnpm --filter @agent-kanban/cli build && node scripts/compose-stack.mjs prod up -d --build",
+    "start:dev": "pnpm check:install && pnpm --filter @agent-kanban/contracts build && pnpm --filter @agent-kanban/cli build && node scripts/compose-stack.mjs dev up -d --build",
+    "stop": "node scripts/compose-stack.mjs prod down",
+    "stop:dev": "node scripts/compose-stack.mjs dev down",
+    "test": "pnpm check:install && node --env-file=.env.dev scripts/run-tests.mjs",
+    "verify:dev": "node --env-file=.env.dev scripts/verify-vertical-slice.mjs"
   },
   "devDependencies": {
     "tsx": "^4.20.0",
