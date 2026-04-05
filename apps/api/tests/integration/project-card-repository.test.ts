@@ -47,4 +47,42 @@ describe.sequential("project and card repositories", () => {
     expect(board.columns.New.cards).toHaveLength(1);
     expect(board.columns.New.cards[0]?.title).toBe("First card");
   });
+
+  it("rejects duplicate project names", async () => {
+    const projects = new ProjectRepository(prisma);
+
+    await projects.create({
+      name: "agent-kanban",
+      repoUrl: "https://example.com/repo.git",
+    });
+
+    await expect(
+      projects.create({
+        name: "agent-kanban",
+        repoUrl: "https://example.com/repo-2.git",
+      })
+    ).rejects.toMatchObject({ code: "P2002" });
+  });
+
+  it("rejects duplicate card titles within the same project", async () => {
+    const project = await new ProjectRepository(prisma).create({
+      name: "duplicate-card-test",
+      repoUrl: "https://example.com/cards.git",
+    });
+    const cards = new CardRepository(prisma);
+
+    await cards.create({
+      projectId: project.id,
+      title: "Backend skeleton",
+      descriptionMd: "# Backend skeleton",
+    });
+
+    await expect(
+      cards.create({
+        projectId: project.id,
+        title: "Backend skeleton",
+        descriptionMd: "# Backend skeleton",
+      })
+    ).rejects.toMatchObject({ code: "P2002" });
+  });
 });

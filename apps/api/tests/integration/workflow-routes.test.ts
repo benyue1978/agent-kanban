@@ -112,6 +112,48 @@ describe.sequential("workflow routes", () => {
     });
   });
 
+  it("returns a 409 when creating a project with a duplicate name", async () => {
+    const app = await buildApp({ prisma });
+
+    const response = await app.inject({
+      method: "POST",
+      url: "/projects",
+      payload: {
+        name: "agent-kanban",
+        repoUrl: "https://example.com/another-repo.git",
+      },
+    });
+
+    expect(response.statusCode).toBe(409);
+    expect(response.json().error.code).toBe("duplicate_name");
+  });
+
+  it("returns a 409 when creating a card with a duplicate title in the same project", async () => {
+    const app = await buildApp({ prisma });
+
+    const response = await app.inject({
+      method: "POST",
+      url: "/cards",
+      payload: {
+        projectId: "project-1",
+        title: "Backend skeleton",
+        descriptionMd: `# Backend skeleton duplicate
+
+## Goal
+Ship it again
+
+## Scope
+Build it again
+
+## Definition of Done
+- [ ] tests`,
+      },
+    });
+
+    expect(response.statusCode).toBe(409);
+    expect(response.json().error.code).toBe("duplicate_name");
+  });
+
   it("returns revision_conflict on stale markdown update", async () => {
     const app = await buildApp({ prisma });
 

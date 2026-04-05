@@ -9,7 +9,7 @@ datasource db {
 
 model Project {
   id          String   @id @default(cuid())
-  name        String
+  name        String   @unique(map: "projects_name_unique")
   description String?
   repoUrl     String   @map("repo_url")
   policyJson  Json     @map("policy_json")
@@ -56,6 +56,7 @@ model Card {
 
   @@index([projectId, state, archivedAt], map: "cards_project_state_archived_idx")
   @@unique([projectId, sourceTaskId], map: "cards_project_source_task_unique")
+  @@unique([projectId, title], map: "cards_project_title_unique")
   @@map("cards")
 }
 

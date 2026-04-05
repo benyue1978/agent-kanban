@@ -19,7 +19,7 @@ import {
   type ProjectPolicy,
 } from "@agent-kanban/contracts";
 import { WorkflowDomainError, canTransition } from "@agent-kanban/domain";
-import type { Prisma, PrismaClient } from "@prisma/client";
+import { Prisma, type PrismaClient } from "@prisma/client";
 import { CardRepository } from "../repositories/card-repository.js";
 import { ProjectRepository } from "../repositories/project-repository.js";
 
@@ -32,6 +32,7 @@ export class ApiError extends Error {
       | "missing_required_section"
       | "summary_required"
       | "forbidden_action"
+      | "duplicate_name"
       | "revision_conflict"
       | "claim_conflict",
     message: string,
@@ -65,6 +66,22 @@ function isCardStateValue(value: string): value is CardStateValue {
 
 function workflowErrorToApiError(error: WorkflowDomainError): ApiError {
   return new ApiError(400, error.code, error.message, error.details);
+}
+
+function isUniqueConstraintError(
+  error: unknown,
+  expectedTargets: string[]
+): error is Prisma.PrismaClientKnownRequestError {
+  if (!(error instanceof Prisma.PrismaClientKnownRequestError) || error.code !== "P2002") {
+    return false;
+  }
+
+  const target = error.meta?.target;
+  return (
+    Array.isArray(target) &&
+    target.length === expectedTargets.length &&
+    expectedTargets.every((value, index) => target[index] === value)
+  );
 }
 
 async function findActor(
@@ -161,12 +178,20 @@ export class CardService {
       throw new ApiError(400, "missing_required_section", "name and repoUrl are required");
     }
 
-    return this.projects.create({
-      name: input.name,
-      repoUrl: input.repoUrl,
-      description: input.description ?? null,
-      policy: input.policy ?? defaultProjectPolicy,
-    });
+    try {
+      return await this.projects.create({
+        name: input.name,
+        repoUrl: input.repoUrl,
+        description: input.description ?? null,
+        policy: input.policy ?? defaultProjectPolicy,
+      });
+    } catch (error) {
+      if (isUniqueConstraintError(error, ["name"])) {
+        throw new ApiError(409, "duplicate_name", `project name already exists: ${input.name}`);
+      }
+
+      throw error;
+    }
   }
 
   async listProjects(): Promise<ProjectListResponse> {
@@ -330,23 +355,35 @@ export class CardService {
   async createCard(input: CreateCardRequest): Promise<CardDetail> {
     const actor = await resolveActor(this.prisma, input.actorId);
 
-    const card = await this.prisma.$transaction(async (tx) => {
-      const created = await new CardRepository(tx as PrismaClient).create(input);
+    try {
+      const card = await this.prisma.$transaction(async (tx) => {
+        const created = await new CardRepository(tx as PrismaClient).create(input);
 
-      await createEvent(tx, {
-        actorId: actor?.id ?? null,
-        cardId: created.id,
-        projectId: created.projectId,
-        type: "card_created",
-        payloadJson: {
-          state: created.state,
-        },
+        await createEvent(tx, {
+          actorId: actor?.id ?? null,
+          cardId: created.id,
+          projectId: created.projectId,
+          type: "card_created",
+          payloadJson: {
+            state: created.state,
+          },
+        });
+
+        return created;
       });
 
-      return created;
-    });
+      return card;
+    } catch (error) {
+      if (isUniqueConstraintError(error, ["project_id", "title"])) {
+        throw new ApiError(
+          409,
+          "duplicate_name",
+          `card title already exists in project: ${input.title}`
+        );
+      }
 
-    return card;
+      throw error;
+    }
   }
 
   async assignOwner(
