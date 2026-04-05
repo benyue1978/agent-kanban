@@ -5,6 +5,7 @@ import type {
   InboxItemStatusValue,
   ListInboxResponse,
   ProjectCreateResponse,
+  ProjectListResponse,
 } from "@agent-kanban/contracts";
 
 const apiBaseUrl = process.env.KANBAN_API_URL ?? "http://127.0.0.1:3001";
@@ -48,6 +49,11 @@ export async function postApi(
 
 export async function fetchBoard(projectId: string): Promise<BoardResponse> {
   return await readJson<BoardResponse>(`/projects/${projectId}/board`);
+}
+
+export async function fetchProjects() : Promise<ProjectListResponse["projects"]> {
+  const response = await readJson<ProjectListResponse>("/projects");
+  return response.projects;
 }
 
 export async function fetchCard(cardId: string): Promise<CardDetail> {

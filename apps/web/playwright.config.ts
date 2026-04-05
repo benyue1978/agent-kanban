@@ -1,7 +1,13 @@
 import { defineConfig } from "@playwright/test";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 
 const apiPort = process.env.PLAYWRIGHT_API_PORT ?? "3101";
 const webPort = process.env.PLAYWRIGHT_WEB_PORT ?? "3100";
+const configDir = path.dirname(fileURLToPath(import.meta.url));
+const repoRoot = path.resolve(configDir, "../..");
+const apiCwd = path.join(repoRoot, "apps/api");
+const webCwd = path.join(repoRoot, "apps/web");
 
 export default defineConfig({
   workers: 1,
@@ -12,7 +18,7 @@ export default defineConfig({
   webServer: [
     {
       command: "pnpm --filter @agent-kanban/api dev",
-      cwd: "/Users/song.yue/git/agent-kanban/.worktrees/codex-local-first-mvp-execution",
+      cwd: repoRoot,
       env: {
         DATABASE_URL:
           "postgresql://agent_kanban:agent_kanban@localhost:5433/agent_kanban?schema=public",
@@ -24,7 +30,7 @@ export default defineConfig({
     },
     {
       command: "pnpm dev",
-      cwd: "/Users/song.yue/git/agent-kanban/.worktrees/codex-local-first-mvp-execution/apps/web",
+      cwd: webCwd,
       env: {
         KANBAN_API_URL: `http://127.0.0.1:${apiPort}`,
         KANBAN_HUMAN_ACTOR_ID: "human-reviewer",
