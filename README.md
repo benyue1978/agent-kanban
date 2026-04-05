@@ -64,15 +64,23 @@ Expected local requirements:
 - Docker with `docker compose`
 - `psql`
 
-### 2. Configure environment
+### 2. Install dependencies
 
-Copy the root env file and adjust if needed:
+Install workspace dependencies first:
+
+```bash
+pnpm install
+```
+
+Then copy the root env file and adjust if needed:
 
 ```bash
 cp .env.example .env
 ```
 
-The current verification scripts assume a local Postgres running on port `5433`, so align `DATABASE_URL` and `POSTGRES_PORT` accordingly if your machine already uses `5432`.
+### 3. Configure environment
+
+The current verification scripts assume a local Postgres exposed on host port `5433`, so align `DATABASE_URL` and `POSTGRES_PORT` accordingly if that port is already in use on your machine.
 
 Example:
 
@@ -84,7 +92,7 @@ POSTGRES_PASSWORD=agent_kanban
 POSTGRES_PORT=5433
 ```
 
-### 3. Start everything
+### 4. Start everything
 
 ```bash
 pnpm start
@@ -101,13 +109,13 @@ Default local endpoints:
 - web UI: `http://127.0.0.1:3000`
 - API: `http://127.0.0.1:3001`
 
-### 4. Run the full test suite
+### 5. Run the full test suite
 
 ```bash
 pnpm test
 ```
 
-### 5. Seed the initial historical cards
+### 6. Seed the initial historical cards
 
 ```bash
 node scripts/backfill-initial-cards.ts
