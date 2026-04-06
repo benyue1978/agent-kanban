@@ -25,16 +25,22 @@ The repository docs are the normative source for system rules.
 
 Before starting any work, verify your environment:
 
-1. **Check Configuration**: \`kanban config --json\`
-   - Ensure \`apiUrl\` points to the correct backend (default: \`http://127.0.0.1:3001\`).
-   - Ensure \`actorId\` is set (typically \`agent\`).
-2. **Smoke Test**: \`kanban cards list --json\`
+1. **Discovery**: `kanban discovery --json`
+   - Use this to programmatically find all available commands and flags.
+2. **Find IDs**: `kanban collaborators list --json`
+   - Use this to find your `actorId` or valid `ownerId` values.
+3. **Check Configuration**: `kanban config --json`
+   - Ensure `apiUrl` and `actorId` are correct.
+4. **Smoke Test**: `kanban cards list --json`
 
-**Pro-tip**: Set these environment variables in your shell to avoid passing flags:
-\`\`\`bash
-export KANBAN_API_URL=http://127.0.0.1:3001
-export KANBAN_ACTOR_ID=agent
-\`\`\`
+**Pro-tip**: Use a local `.kanban.json` in your project root to store defaults:
+```json
+{
+  "apiUrl": "http://127.0.0.1:3001",
+  "actorId": "agent",
+  "projectId": "cmnlv..."
+}
+```
 
 ## Runtime Model
 
@@ -64,7 +70,7 @@ An agent should have access to:
 These may come from:
 
 - current working directory
-- local config
+- local config (`.kanban.json`)
 - environment variables
 - explicit CLI arguments
 
@@ -118,6 +124,13 @@ These may come from:
    * use full markdown roundtrip for larger planning edits
    * ALWAYS use the `kanban <resource> <action>` pattern
 
+### Use Discovery for Accuracy
+Always run `kanban discovery --json` at the start of a session or when encountering an "unknown option" error. This ensures you are using the correct flags for the current version of the CLI.
+
+### Safety with Dry-run
+If you are unsure about a destructive update, use the `--dry-run` flag:
+`kanban cards set-state --id 123 --to done --dry-run --json`
+
 ## 1. Getting a Task
 
 Agents get work by discussing requirements with the human via chat. The agent is responsible for:
@@ -128,9 +141,9 @@ Agents get work by discussing requirements with the human via chat. The agent is
 
 Examples of CLI usage for these actions:
 
-\`kanban --api-url http://127.0.0.1:3001 cards create --title "Implement X" --description-file task.md --json\`
-\`kanban --api-url http://127.0.0.1:3001 cards assign-owner --id 123 --to agent --json\`
-\`kanban --api-url http://127.0.0.1:3001 cards set-state --id 123 --to ready --json\`
+`kanban cards create --title "Implement X" --description-file task.md --json`
+`kanban cards assign-owner --id 123 --to agent --json`
+`kanban cards set-state --id 123 --to ready --json`
 
 Unless the human explicitly creates and assigns a card, the agent should take the initiative to document and manage the task in the Kanban system based on the chat discussion.
 
@@ -144,7 +157,7 @@ Before working, focus on:
 - Definition of Done
 - Constraints
 - Final Summary, if present
-- recent comments, especially \`question\` and \`decision\`
+- recent comments, especially `question` and `decision`
 
 The repo remains the source of truth for code and detailed artifacts.
 
@@ -157,9 +170,9 @@ Typical agent flow:
 1. identify the target card
 2. read card content
 3. inspect current repo state
-4. verify collaborator IDs (default: \`agent\` for agents, \`human\` for humans)
+4. verify collaborator IDs (default: `agent` for agents, `human` for humans)
 5. claim or confirm ownership if needed
-6. **Move card to In Progress**: No implementation work should start until the card is in the \`In Progress\` state.
+6. **Move card to In Progress**: No implementation work should start until the card is in the `In Progress` state.
 7. perform work in repo
 8. leave progress comments
 8. update summary
@@ -167,11 +180,11 @@ Typical agent flow:
 10. move card through workflow
 
 **Workspace Hygiene Mandate**:
-- Do NOT create temporary \`.md\` files in the repository root.
+- Do NOT create temporary `.md` files in the repository root.
 - Use the project's temporary directory (as provided in the session context) for staging larger edits.
-- Prefer using shell pipes with the \`--file -\` convention for large text updates (e.g., \`cat card.md | kanban cards update --id 123 --file - --revision 1 --json\`).
+- Prefer using shell pipes with the `--file -` convention for large text updates (e.g., `cat card.md | kanban cards update --id 123 --file - --revision 1 --json`).
 
-If the task came from an approved implementation plan, also inspect any linked \`sourceTaskId\`, plan path, and spec path on the card before making execution choices.
+If the task came from an approved implementation plan, also inspect any linked `sourceTaskId`, plan path, and spec path on the card before making execution choices.
 
 Do not use a CLI plan-import command. If cards need to be created from a plan markdown file, parse the plan in the agent workflow and create cards task-by-task.
 
@@ -181,25 +194,25 @@ Prefer these commands for critical updates:
 
 ### Set state
 
-\`kanban --api-url http://127.0.0.1:3001 cards set-state --id 123 --to in-progress --owner agent --actor human --json\`
+`kanban cards set-state --id 123 --to in-progress --owner agent --json`
 
 ### Assign owner
 
-\`kanban --api-url http://127.0.0.1:3001 cards assign-owner --id 123 --to agent --json\`
+`kanban cards assign-owner --id 123 --to agent --json`
 
 ### Append summary
 
-\`kanban --api-url http://127.0.0.1:3001 cards append-summary --id 123 --file summary.md --json\`
+`kanban cards append-summary --id 123 --file summary.md --json`
 
 ### Add comment
 
-\`kanban --api-url http://127.0.0.1:3001 cards comment --id 123 --body "..." --kind progress --author agent --json\`
+`kanban cards comment --id 123 --body "..." --kind progress --author agent --json`
 
 Use full markdown roundtrip when editing planning content or larger descriptive sections:
 
-\`kanban --api-url http://127.0.0.1:3001 cards show --id 123 > card.md\`
+`kanban cards show --id 123 > card.md`
 edit locally
-\`kanban --api-url http://127.0.0.1:3001 cards update --id 123 --file card.md --revision <known_revision> --actor agent --json\`
+`kanban cards update --id 123 --file card.md --revision <known_revision> --json`
 
 ## 5. Comment Usage
 
@@ -284,6 +297,7 @@ Common error types may include:
 - `forbidden_action`
 - `revision_conflict`
 - `claim_conflict`
+- `cli_usage_error`
 
 ### Recommended behavior
 
@@ -303,6 +317,10 @@ Common error types may include:
 
 - update the missing section explicitly
 - do not try to bypass workflow rules
+
+#### On `cli_usage_error`
+
+- run `kanban discovery --json` to verify correct flags and command structure
 
 ## 9. Final Summary (Critical)
 

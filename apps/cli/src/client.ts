@@ -4,6 +4,7 @@ import type {
   AssignCardOwnerResponse,
   BoardResponse,
   CardDetail,
+  CollaboratorListResponse,
   CreateCardResponse,
   ErrorResponse,
   ProjectCreateResponse,
@@ -85,6 +86,10 @@ export class ApiClient {
 
   listProjects(): Promise<ProjectListResponse> {
     return this.request<ProjectListResponse>("/projects");
+  }
+
+  listCollaborators(): Promise<CollaboratorListResponse> {
+    return this.request<CollaboratorListResponse>("/collaborators");
   }
 
   createProject(body: Record<string, unknown>): Promise<ProjectCreateResponse> {

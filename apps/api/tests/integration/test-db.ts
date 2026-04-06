@@ -10,7 +10,7 @@ export async function resetDatabase(prisma: PrismaClient): Promise<void> {
   const rawClient = new PrismaClient({
     datasources: {
       db: {
-        url: process.env.DATABASE_URL,
+        url: process.env.DATABASE_URL ?? "",
       },
     },
   });

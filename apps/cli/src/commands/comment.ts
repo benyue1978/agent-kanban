@@ -1,22 +1,24 @@
-import type { CommandContext } from "./common.js";
-import {
-  parseCommandArgs,
-  requireStringFlag,
-  resolveActorId,
-} from "./common.js";
+import { resolveActorId, type CommandContext } from "./common.js";
 
-export async function runCommentCommand({ args, client, env }: CommandContext) {
-  const { values } = parseCommandArgs(args, {
-    author: { type: "string" },
-    body: { type: "string" },
-    id: { type: "string" },
-    json: { type: "boolean" },
-    kind: { type: "string" },
-  });
+export async function runCommentCommand(options: any, { client, env }: CommandContext) {
+  const cardId = options.id;
+  if (typeof cardId !== "string" || cardId.length === 0) {
+    throw new Error("missing required flag --id");
+  }
 
-  return await client.addComment(requireStringFlag(values, "id"), {
-    authorId: resolveActorId(values, env, "author") ?? requireStringFlag(values, "author"),
-    body: requireStringFlag(values, "body"),
-    kind: requireStringFlag(values, "kind"),
+  const body = options.body;
+  if (typeof body !== "string" || body.length === 0) {
+    throw new Error("missing required flag --body");
+  }
+
+  const kind = options.kind;
+  if (typeof kind !== "string" || kind.length === 0) {
+    throw new Error("missing required flag --kind");
+  }
+
+  return await client.addComment(cardId, {
+    authorId: resolveActorId(options, env, "author"),
+    body,
+    kind,
   });
 }

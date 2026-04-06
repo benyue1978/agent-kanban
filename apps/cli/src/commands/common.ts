@@ -1,6 +1,5 @@
 import { readFile } from "node:fs/promises";
 import { execFile } from "node:child_process";
-import { parseArgs } from "node:util";
 import { promisify } from "node:util";
 import { CardState, defaultProjectPolicy, type ProjectPolicy } from "@agent-kanban/contracts";
 import type { ApiClient } from "../client.js";
@@ -8,64 +7,33 @@ import type { ApiClient } from "../client.js";
 const execFileAsync = promisify(execFile);
 
 export interface CommandEnvironment {
-  actorId?: string;
-  apiUrl?: string;
+  actorId?: string | undefined;
+  apiUrl?: string | undefined;
+  projectId?: string | undefined;
 }
 
 export interface CommandContext {
-  args: string[];
   client: ApiClient;
   env: CommandEnvironment;
 }
 
-export function parseCommandArgs(
-  args: string[],
-  options: Record<string, { type: "boolean" | "string" }>
-) {
-  return parseArgs({
-    args,
-    allowPositionals: false,
-    strict: true,
-    options,
-  });
-}
-
-export function requireStringFlag(
-  values: Record<string, string | boolean | undefined>,
-  name: string
-): string {
-  const value = values[name];
-
-  if (typeof value !== "string" || value.length === 0) {
-    throw new Error(`missing required flag --${name}`);
+export async function loadLocalConfig(): Promise<Partial<CommandEnvironment>> {
+  try {
+    const raw = await readFile(".kanban.json", "utf8");
+    return JSON.parse(raw);
+  } catch {
+    return {};
   }
-
-  return value;
-}
-
-export function getOptionalStringFlag(
-  values: Record<string, string | boolean | undefined>,
-  name: string
-): string | undefined {
-  const value = values[name];
-  return typeof value === "string" && value.length > 0 ? value : undefined;
-}
-
-export function getOptionalBooleanFlag(
-  values: Record<string, string | boolean | undefined>,
-  name: string
-): boolean {
-  return values[name] === true;
 }
 
 export async function resolveProjectId(
-  values: Record<string, string | boolean | undefined>,
-  _env: CommandEnvironment,
+  options: Record<string, any>,
+  env: CommandEnvironment,
   client: ApiClient
 ): Promise<string> {
-  const explicitProjectId = getOptionalStringFlag(values, "project");
+  const explicitProjectId = options.project ?? env.projectId;
 
-  if (explicitProjectId !== undefined) {
+  if (typeof explicitProjectId === "string" && explicitProjectId.length > 0) {
     return explicitProjectId;
   }
 
@@ -108,11 +76,12 @@ export function inferProjectNameFromRepoUrl(repoUrl: string): string {
 }
 
 export function resolveActorId(
-  values: Record<string, string | boolean | undefined>,
+  options: Record<string, any>,
   env: CommandEnvironment,
   flagName = "actor"
 ): string | undefined {
-  return getOptionalStringFlag(values, flagName) ?? env.actorId;
+  const value = options[flagName];
+  return (typeof value === "string" && value.length > 0) ? value : env.actorId;
 }
 
 export async function readTextFile(path: string): Promise<string> {
@@ -148,12 +117,12 @@ const stateSlugMap = {
 } as const;
 
 export function getOptionalCardStateValue(
-  values: Record<string, string | boolean | undefined>,
+  options: Record<string, any>,
   name: string
 ): string | undefined {
-  const value = getOptionalStringFlag(values, name);
+  const value = options[name];
 
-  if (value === undefined) {
+  if (typeof value !== "string" || value.length === 0) {
     return undefined;
   }
 
@@ -161,10 +130,13 @@ export function getOptionalCardStateValue(
 }
 
 export function requireCardStateValue(
-  values: Record<string, string | boolean | undefined>,
+  options: Record<string, any>,
   name: string
 ): string {
-  const value = requireStringFlag(values, name);
+  const value = options[name];
+  if (typeof value !== "string" || value.length === 0) {
+    fail(`missing required flag --${name}`);
+  }
   return stateSlugMap[value as keyof typeof stateSlugMap] ?? fail(`unsupported state: ${value}`);
 }
 

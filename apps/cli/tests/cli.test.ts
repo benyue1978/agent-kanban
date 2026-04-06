@@ -410,11 +410,11 @@ describe("cli", () => {
     });
 
     expect(topLevel.exitCode).toBe(0);
-    expect(topLevel.stdout).toContain("Usage:");
+    expect(topLevel.stdout).toContain("Usage: kanban");
     expect(projects.exitCode).toBe(0);
-    expect(projects.stdout).toContain("projects");
+    expect(projects.stdout).toContain("Usage: kanban projects");
     expect(cards.exitCode).toBe(0);
-    expect(cards.stdout).toContain("cards");
+    expect(cards.stdout).toContain("Usage: kanban cards");
   });
 
   it("reads card description from stdin when file is '-'", async () => {

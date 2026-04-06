@@ -142,6 +142,10 @@ export interface ProjectListResponse {
   projects: ProjectListItem[];
 }
 
+export interface CollaboratorListResponse {
+  collaborators: ActorRef[];
+}
+
 export interface ProjectCreateRequest {
   name: string;
   description: string | null;

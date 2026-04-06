@@ -2,124 +2,120 @@
 
 ## Overview
 
-CLI is the primary interface for agents.
-
-Agents interact with the system through CLI commands, not direct database or UI access.
+The `kanban` CLI is the primary interface for agents and a power-user tool for humans. It provides structured commands for managing projects, cards, and collaborator actions.
 
 ## Principles
 
-- CLI should be simple and predictable
-- CLI should expose core operations only
-- Markdown should remain the main flexible editing interface
-- Critical operations should also have structured commands
+- **Predictability**: Use standard `commander.js` patterns for flags and subcommands.
+- **Machine-Friendly**: Robust JSON output support (`--json`) for all commands and errors.
+- **Discoverability**: Built-in help (`--help`) and a machine-readable `discovery` command.
+- **Safety**: Support for `--dry-run` to validate operations without side effects.
 
 ## Connection Model
 
-An agent session should have access to:
+The CLI determines its configuration using the following priority:
+1. **CLI Flags**: `--api-url`, `--actor`.
+2. **Local Configuration**: `.kanban.json` in the current working directory.
+3. **Environment Variables**: `KANBAN_API_URL`, `KANBAN_ACTOR_ID`.
+4. **Hardcoded Defaults**: `http://127.0.0.1:3001`.
 
-- current repo context
-- target `kanban_url`
-- actor identity / auth
+### Local Config (`.kanban.json`)
+```json
+{
+  "apiUrl": "http://127.0.0.1:3001",
+  "actorId": "agent",
+  "projectId": "cmnlvfehm..."
+}
+```
 
-A V1 implementation may provide these via:
+## Global Options
 
-- current working directory
-- local config file
-- environment variables
-- explicit CLI flags
-
-Recommended conceptual model:
-
-- `repo_url` = logical repository identity
-- local cwd / repo_path = local execution context
-- `kanban_url` = task system endpoint
-
-`kanban_url` is runtime/session connection config, not project domain identity.
+- `--api-url <url>`: Override the target API endpoint.
+- `--actor <id>`: Set the actor performing the action (default: `agent`).
+- `--json`: Force output in JSON format (including errors).
+- `--dry-run`: Validate arguments and state but skip the final API call.
 
 ## Commands
 
-### List projects
+### Discovery & Config
 
-`kanban projects list`
+#### `kanban discovery`
+Outputs a machine-readable JSON schema of all available commands, options, and descriptions.
+`kanban discovery --json`
 
-### List cards
+#### `kanban config`
+Displays the resolved configuration (API URL and Actor ID).
+`kanban config --json`
 
-`kanban cards list`
-`kanban cards list --assigned-to me`
-`kanban cards list --state ready`
+### Collaborators
 
-### Show card
+#### `kanban collaborators list`
+Lists all collaborators in the system. Use this to find valid `actorId` or `ownerId` values.
+`kanban collaborators list [--json]`
 
-`kanban cards show --id <card_id>`
+### Projects
 
-### Create card
+#### `kanban projects list`
+Lists all projects in the system.
 
-`kanban cards create --title "..."`
+#### `kanban projects create`
+Creates a new project.
+`kanban projects create --repo-url <url> [--name <name>] [--description <text>] [--policy-file <path>]`
 
-### Full markdown update
+### Cards
 
-`kanban cards show --id 123 > card.md`
-edit card.md
-`kanban cards update --id 123 --file card.md --revision <known_revision>`
+#### `kanban cards list`
+Lists cards, optionally filtered by project, state, or owner.
+`kanban cards list [--project <id>] [--state <state>] [--assigned-to <id|me>]`
 
-### Structured state update
+#### `kanban cards show`
+Shows full details for a specific card.
+`kanban cards show --id <card-id>`
 
-`kanban cards set-state --id 123 --to in-progress --owner <collaborator>`
+#### `kanban cards create`
+Creates a new card.
+`kanban cards create --title <title> [--project <id>] [--description-file <path>] [--priority <n>]`
 
-### Structured owner assignment
+#### `kanban cards assign-owner`
+Assigns or unassigns an owner.
+`kanban cards assign-owner --id <card-id> --to <owner-id|none>`
 
-`kanban cards assign-owner --id 123 --to <collaborator>`
+#### `kanban cards set-state`
+Transitions a card to a new workflow state.
+`kanban cards set-state --id <card-id> --to <new|ready|in-progress|done> [--owner <id>] [--revision <n>]`
 
-### Structured summary update
+#### `kanban cards update`
+Performs a full markdown update of the card description.
+`kanban cards update --id <card-id> --file <path> --revision <n>`
 
-`kanban cards append-summary --id 123 --file summary.md`
+#### `kanban cards append-summary`
+Appends content to the card's final summary.
+`kanban cards append-summary --id <card-id> --file <path>`
 
-### Add comment
+#### `kanban cards comment`
+Adds a collaborative comment to the card timeline.
+`kanban cards comment --id <card-id> --body <text> --kind <progress|question|decision|note|verification> [--author <id>]`
 
-`kanban cards comment --id 123 --body "..." --kind progress --author <collaborator>`
+## Error Contract
 
-## Structured Command Result Contract
+When `--json` is enabled, errors are returned as a JSON object:
 
-This document is the normative source for structured command input/output expectations.
+### API Error
+```json
+{
+  "error": {
+    "code": "revision_conflict",
+    "message": "stale revision"
+  }
+}
+```
 
-Structured commands should return machine-usable results.
-
-Where relevant, responses should include:
-
-- card id
-- new revision
-- resulting state
-- owner
-- machine-usable error on failure
-
-## Behavior
-
-- CLI calls backend API
-- CLI outputs markdown or JSON
-- CLI should be composable in scripts
-
-## Agent Usage Pattern
-
-Typical flow:
-
-1. list tasks
-2. pick project if inference is ambiguous
-3. pick task
-4. show card
-5. execute work in repo
-6. update card through either full markdown update or structured commands
-7. add comments
-8. move state
-
-## Recommended Usage
-
-For agent workflows:
-
-- prefer structured commands for state, ownership, summary, and comments
-- use full markdown roundtrip when editing planning content or larger descriptive sections
-
-## Non-goals
-
-- CLI is not a full workflow engine
-- CLI does not enforce heavy logic by itself
-- CLI does not bypass backend workflow validation
+### CLI Usage Error
+```json
+{
+  "error": {
+    "code": "cli_usage_error",
+    "message": "error: missing required flag --id"
+  }
+}
+```

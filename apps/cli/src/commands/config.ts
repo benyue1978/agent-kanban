@@ -1,21 +1,10 @@
-import { type CommandContext, parseCommandArgs } from "./common.js";
+import type { CommandContext } from "./common.js";
 
-export async function runConfigCommand(context: CommandContext): Promise<unknown> {
-  const { values } = parseCommandArgs(context.args, {
-    json: { type: "boolean" },
-  });
-
-  const apiUrl = context.env.apiUrl ?? "http://127.0.0.1:3001";
-  const actorId = context.env.actorId ?? "unknown";
-
+export async function runConfigCommand(_options: any, { env }: CommandContext) {
   return {
     config: {
-      apiUrl,
-      actorId,
-      source: {
-        apiUrl: context.env.apiUrl ? "environment/flag" : "default",
-        actorId: context.env.actorId ? "environment" : "default",
-      },
+      apiUrl: env.apiUrl,
+      actorId: env.actorId,
     },
   };
 }

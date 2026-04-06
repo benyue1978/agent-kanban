@@ -1,26 +1,24 @@
-import type { CommandContext } from "./common.js";
-import {
-  parseCommandArgs,
-  readTextFile,
-  requireStringFlag,
-  resolveActorId,
-} from "./common.js";
+import { readTextFile, resolveActorId, type CommandContext } from "./common.js";
 
-export async function runUpdateCardCommand({ args, client, env }: CommandContext) {
-  const { values } = parseCommandArgs(args, {
-    actor: { type: "string" },
-    file: { type: "string" },
-    id: { type: "string" },
-    json: { type: "boolean" },
-    revision: { type: "string" },
-  });
-  const cardId = requireStringFlag(values, "id");
-  const revisionValue = requireStringFlag(values, "revision");
-  const descriptionMd = await readTextFile(requireStringFlag(values, "file"));
+export async function runUpdateCardCommand(options: any, { client, env }: CommandContext) {
+  const cardId = options.id;
+  if (typeof cardId !== "string" || cardId.length === 0) {
+    throw new Error("missing required flag --id");
+  }
+
+  const file = options.file;
+  if (typeof file !== "string" || file.length === 0) {
+    throw new Error("missing required flag --file");
+  }
+
+  const revision = options.revision;
+  if (revision === undefined) {
+    throw new Error("missing required flag --revision");
+  }
 
   return await client.updateMarkdown(cardId, {
-    actorId: resolveActorId(values, env),
-    descriptionMd,
-    revision: Number.parseInt(revisionValue, 10),
+    actorId: resolveActorId(options, env),
+    descriptionMd: await readTextFile(file),
+    revision: Number.parseInt(String(revision), 10),
   });
 }

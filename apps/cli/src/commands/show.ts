@@ -1,11 +1,9 @@
 import type { CommandContext } from "./common.js";
-import { parseCommandArgs, requireStringFlag } from "./common.js";
 
-export async function runShowCommand({ args, client }: CommandContext) {
-  const { values } = parseCommandArgs(args, {
-    id: { type: "string" },
-    json: { type: "boolean" },
-  });
-
-  return await client.getCard(requireStringFlag(values, "id"));
+export async function runShowCommand(options: any, { client }: CommandContext) {
+  const cardId = options.id;
+  if (typeof cardId !== "string" || cardId.length === 0) {
+    throw new Error("missing required flag --id");
+  }
+  return await client.getCard(cardId);
 }
