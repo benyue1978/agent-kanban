@@ -350,6 +350,8 @@ Do not:
 - bypass structured commands for critical updates unless necessary
 - use old flat CLI commands
 - create temporary `.md` files in the workspace root
+- submit final summary without verification evidence
+- submit final summary without linking to real commits
 
 ## 11. Working Philosophy
 
