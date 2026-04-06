@@ -76,7 +76,7 @@ These may come from:
 
 4. **Mandate Quality Descriptions**
 
-   * every card MUST have a high-quality description following the template in `docs/card-spec.md`
+   * every card MUST have a high-quality description following the template in `assets/card-template.md`
    * descriptions MUST include `## Goal`, `## Context`, `## Scope`, and `## Definition of Done`
    * do not create or work on cards with only a title
 
@@ -160,7 +160,7 @@ Typical agent flow:
 
 **Workspace Hygiene Mandate**:
 - Do NOT create temporary `.md` files in the repository root.
-- Use the project's temporary directory (`/Users/song.yue/.gemini/tmp/agent-kanban`) for staging larger edits.
+- Use the project's temporary directory (as provided in the session context) for staging larger edits.
 - Prefer using shell pipes with the `--file -` convention for large text updates (e.g., `cat card.md | kanban cards update --id 123 --file - --revision 1`).
 
 If the task came from an approved implementation plan, also inspect any linked `sourceTaskId`, plan path, and spec path on the card before making execution choices.

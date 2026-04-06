@@ -12,37 +12,7 @@ Card description is markdown with a recommended structure.
 
 ### Canonical template
 
-```markdown
-# Title
-
-## Goal
-
-## Context
-
-## Scope
-
-## Definition of Done
-- [ ] item
-
-## Constraints
-
-## Plan
-
----
-
-## Final Summary
-### What was done
-
-### Key Decisions
-
-### Result / Links
-
-### DoD Check
-- [x] fulfilled item
-- [ ] not yet fulfilled item
-```
-
-This is the canonical card skeleton for V1.
+See `assets/card-template.md` for the canonical card skeleton for V1.
 
 Protected headings should remain stable so that both humans and agents can use the same template safely.
 
