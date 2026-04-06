@@ -74,6 +74,12 @@ These may come from:
    * comments record progress, questions, notes, and decisions
    * comments do not replace Final Summary
 
+4. **Mandate Quality Descriptions**
+
+   * every card MUST have a high-quality description following the template in `docs/card-spec.md`
+   * descriptions MUST include `## Goal`, `## Context`, `## Scope`, and `## Definition of Done`
+   * do not create or work on cards with only a title
+
 5. **Final Summary is required before Done**
 
    * important decisions affecting result understanding should be reflected there
@@ -87,9 +93,9 @@ These may come from:
 
 7. **Prefer structured commands for critical updates**
 
-
    * use structured commands for state, ownership, summary, and comments
    * use full markdown roundtrip for larger planning edits
+   * ALWAYS use the `kanban <resource> <action>` pattern
 
 ## 1. Getting a Task
 
@@ -101,7 +107,7 @@ Agents can get work in two ways:
 Examples:
 
 `kanban projects list`
-`kanban cards list --assigned-to me`
+`kanban cards list --assigned-to agent`
 `kanban cards list --state ready`
 
 Unless project policy explicitly allows picking unassigned Ready cards, the agent should not claim arbitrary work on its own.
@@ -133,12 +139,13 @@ Typical agent flow:
 1. identify the target card
 2. read card content
 3. inspect current repo state
-4. claim or confirm ownership if needed
-5. perform work in repo
-6. leave progress comments
-7. update summary
-8. add verification evidence when the task is complete enough
-9. move card through workflow
+4. verify collaborator IDs (default: `agent` for agents, `human` for humans)
+5. claim or confirm ownership if needed
+6. perform work in repo
+7. leave progress comments
+8. update summary
+9. add verification evidence when the task is complete enough
+10. move card through workflow
 
 If the task came from an approved implementation plan, also inspect any linked `sourceTaskId`, plan path, and spec path on the card before making execution choices.
 
@@ -150,11 +157,11 @@ Prefer these commands for critical updates:
 
 ### Set state
 
-`kanban cards set-state --id 123 --to in-progress --owner agent-coder`
+`kanban cards set-state --id 123 --to in-progress --owner agent --actor human`
 
 ### Assign owner
 
-`kanban cards assign-owner --id 123 --to agent-coder`
+`kanban cards assign-owner --id 123 --to agent`
 
 ### Append summary
 
@@ -162,13 +169,13 @@ Prefer these commands for critical updates:
 
 ### Add comment
 
-`kanban cards comment --id 123 --body "..." --kind progress --author agent-coder`
+`kanban cards comment --id 123 --body "..." --kind progress --author agent`
 
 Use full markdown roundtrip when editing planning content or larger descriptive sections:
 
 `kanban cards show --id 123 > card.md`
 edit locally
-`kanban cards update --id 123 --file card.md --revision <known_revision>`
+`kanban cards update --id 123 --file card.md --revision <known_revision> --actor agent`
 
 ## 5. Comment Usage
 
@@ -214,6 +221,8 @@ If a decision materially affects final understanding of the work, it should also
 Cards move through:
 
 New → Ready → In Progress → Done
+
+All cards, including historical backfills, MUST follow this sequence.
 
 Important constraints:
 
@@ -297,6 +306,7 @@ Do not:
 - rely on stale local card copies after conflict errors
 - assume local repo path is the project identity
 - bypass structured commands for critical updates unless necessary
+- use old flat CLI commands
 
 ## 11. Working Philosophy
 
