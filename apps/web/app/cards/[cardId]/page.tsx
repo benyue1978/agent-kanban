@@ -1,6 +1,7 @@
 import { CardDetail } from "@/components/card-detail";
+import { RealTimeRefresher } from "@/components/real-time-refresher";
 import { fetchCard } from "@/lib/api";
-import { getHumanActorId } from "@/lib/config";
+import { getApiBaseUrl, getHumanActorId } from "@/lib/config";
 
 export const dynamic = "force-dynamic";
 
@@ -12,9 +13,11 @@ export default async function CardPage({
   const { cardId } = await params;
   const card = await fetchCard(cardId);
   const humanActorId = getHumanActorId();
+  const apiUrl = getApiBaseUrl();
 
   return (
     <main>
+      <RealTimeRefresher cardId={cardId} apiUrl={apiUrl} />
       <CardDetail card={card} humanActorId={humanActorId} />
     </main>
   );

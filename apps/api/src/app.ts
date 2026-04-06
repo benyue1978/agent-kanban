@@ -2,6 +2,7 @@ import Fastify, { type FastifyInstance } from "fastify";
 import type { PrismaClient } from "@prisma/client";
 import { prisma as defaultPrisma } from "./lib/prisma.js";
 import { cardRoutes } from "./routes/cards.js";
+import { eventRoutes } from "./routes/events.js";
 import { inboxRoutes } from "./routes/inbox.js";
 import { projectRoutes } from "./routes/projects.js";
 import { ApiError } from "./services/card-service.js";
@@ -44,6 +45,7 @@ export async function buildApp(options: BuildAppOptions = {}): Promise<FastifyIn
   await app.register(projectRoutes);
   await app.register(cardRoutes);
   await app.register(inboxRoutes);
+  await app.register(eventRoutes);
 
   return app;
 }
