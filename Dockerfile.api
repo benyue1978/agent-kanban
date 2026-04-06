@@ -31,4 +31,4 @@ RUN pnpm --filter @agent-kanban/contracts build \
 
 EXPOSE 3000
 
-CMD ["sh", "-lc", "pnpm --filter @agent-kanban/api prisma migrate deploy && node apps/api/dist/src/server.js"]
+CMD ["sh", "-lc", "pnpm --filter @agent-kanban/api prisma migrate deploy && pnpm --filter @agent-kanban/api prisma db seed && node apps/api/dist/src/server.js"]

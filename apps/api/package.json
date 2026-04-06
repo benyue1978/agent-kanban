@@ -9,6 +9,9 @@
     "test": "pnpm prisma migrate deploy && vitest run",
     "prisma": "prisma"
   },
+  "prisma": {
+    "seed": "tsx prisma/seed.ts"
+  },
   "dependencies": {
     "@agent-kanban/card-markdown": "workspace:*",
     "@agent-kanban/contracts": "workspace:*",
