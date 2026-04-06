@@ -24,13 +24,37 @@ The seeding process is **idempotent and additive**. It uses Prisma `upsert` to c
 
 ### 2. Backups
 
-To perform an ad-hoc backup of the production database:
+The system provides a built-in script to automate backups of the production database. This script handles timestamping and stores the SQL dump in the `backups/` directory.
+
+To perform an ad-hoc backup:
+
+```bash
+pnpm db:backup
+```
+
+For manual control, you can still use the underlying docker command:
 
 ```bash
 docker exec agent-kanban-prod-postgres-1 pg_dump -U agent_kanban -d agent_kanban > backup_$(date +%Y%m%d_%H%M%S).sql
 ```
 
-### 3. Restoration
+### 3. Scheduling Backups (Cron)
+
+To schedule regular backups, you can use `cron` on the host machine. 
+
+**Example: Every day at 3:00 AM**
+
+Open your crontab:
+```bash
+crontab -e
+```
+
+Add the following entry (adjust path to your repo):
+```cron
+0 3 * * * cd /path/to/agent-kanban && /usr/local/bin/pnpm db:backup >> /var/log/agent-kanban-backup.log 2>&1
+```
+
+### 4. Restoration
 
 To restore a backup into the production environment:
 

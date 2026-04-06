@@ -14,6 +14,7 @@
     "db:reset:dev": "node scripts/compose-stack.mjs dev down -v",
     "db:seed": "pnpm --filter @agent-kanban/api prisma db seed",
     "db:seed:dev": "DATABASE_URL=postgresql://agent_kanban:agent_kanban@localhost:5434/agent_kanban_dev?schema=public pnpm --filter @agent-kanban/api prisma db seed",
+    "db:backup": "node scripts/backup-prod.mjs",
     "cli:install": "pnpm check:install && node scripts/cli-global.mjs install",
     "cli:uninstall": "node scripts/cli-global.mjs uninstall",
     "import:plan": "tsx scripts/import-plan-tasks.ts",
