@@ -4,6 +4,17 @@ import { spawnSync } from "node:child_process";
 const rawArgs = process.argv.slice(2);
 const args = rawArgs[0] === "--" ? rawArgs.slice(1) : rawArgs;
 
+// --- SAFETY GUARD ---
+const databaseUrl = process.env.DATABASE_URL ?? "";
+if (databaseUrl.includes(":5433") || (databaseUrl.includes("/agent_kanban") && !databaseUrl.includes("/agent_kanban_dev"))) {
+  process.stderr.write(
+    `CRITICAL SAFETY VIOLATION: DATABASE_URL points to a production-like environment: ${databaseUrl}\n` +
+    `Aborting test run to protect production data.\n`
+  );
+  process.exit(1);
+}
+// --------------------
+
 function run(command, commandArgs) {
   const result = spawnSync(command, commandArgs, {
     stdio: "inherit",

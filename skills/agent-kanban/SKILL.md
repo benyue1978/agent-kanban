@@ -74,12 +74,19 @@ These may come from:
    * comments record progress, questions, notes, and decisions
    * comments do not replace Final Summary
 
-4. **Final Summary is required before Done**
+5. **Final Summary is required before Done**
 
    * important decisions affecting result understanding should be reflected there
    * readers should not need to reconstruct final state only from comment history
 
-5. **Prefer structured commands for critical updates**
+6. **Safety & Integrity**
+
+   * **Production is Sacred**: Never run tests or destructive commands against the production environment.
+   * **Verify Environment**: Before running tests, explicitly check `DATABASE_URL` (e.g., `printenv | grep DATABASE`). It must target port `5434` and use the `agent_kanban_dev` database name.
+   * **No Manual Truncation**: Use provided test runners that respect `.env.dev`.
+
+7. **Prefer structured commands for critical updates**
+
 
    * use structured commands for state, ownership, summary, and comments
    * use full markdown roundtrip for larger planning edits
