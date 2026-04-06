@@ -1,7 +1,9 @@
 import {
   appendCompletionSummary,
   getProtectedSections,
+  isSectionComplete,
   validateCompletionSummary,
+  type ProtectedSections,
 } from "@agent-kanban/card-markdown";
 import {
   CardState,
@@ -152,7 +154,21 @@ async function createEvent(
 
 function hasRequiredSections(title: string, descriptionMd: string): boolean {
   const sections = getProtectedSections(descriptionMd);
-  return Boolean(title.length > 0 && sections.goal && sections.scope && sections.definitionOfDone);
+  const coreSections = [
+    { key: "goal", name: "Goal" },
+    { key: "context", name: "Context" },
+    { key: "scope", name: "Scope" },
+    { key: "definitionOfDone", name: "Definition of Done" },
+  ];
+
+  for (const section of coreSections) {
+    const content = sections[section.key as keyof ProtectedSections];
+    if (content === undefined || !isSectionComplete(content)) {
+      return false;
+    }
+  }
+
+  return title.length > 0;
 }
 
 async function countVerificationComments(prisma: PrismaClient, cardId: string): Promise<number> {

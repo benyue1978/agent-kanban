@@ -306,4 +306,23 @@ Build it again
     expect(protectedResponse.statusCode).toBe(200);
     expect(protectedResponse.json().results[0].outcome).toBe("protected");
   });
+
+  it("rejects New -> Ready transition if description contains placeholders", async () => {
+    const app = await buildApp({ prisma });
+
+    // Card 2 is New and has "# current" (incomplete)
+    const response = await app.inject({
+      method: "POST",
+      url: "/cards/card-2/set-state",
+      payload: {
+        actorId: "agent-1", 
+        to: "Ready",
+        revision: 2,
+      },
+    });
+
+    expect(response.statusCode).toBe(400);
+    expect(response.json().error.code).toBe("missing_required_section");
+    expect(response.json().error.message).toContain("required sections");
+  });
 });
