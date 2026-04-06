@@ -43,7 +43,7 @@ export function RealTimeRefresher({ projectId, cardId }: RealTimeRefresherProps)
     return () => {
       eventSource.close();
     };
-  }, [projectId, cardId, apiUrl, router]);
+  }, [projectId, cardId, router]);
 
   return null; // This is a logic-only component
 }
