@@ -10,7 +10,7 @@ const nextConfig = {
     return [
       {
         source: "/kanban-api/:path*",
-        destination: `${process.env.KANBAN_API_URL || "http://127.0.0.1:3001"}/:path*`,
+        destination: `${process.env.KANBAN_API_URL || "http://127.0.0.1:3101"}/:path*`,
       },
     ];
   },

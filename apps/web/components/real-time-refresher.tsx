@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect } from "react";
-import { useRouter } from "next/navigation";
 
 interface RealTimeRefresherProps {
   projectId?: string;
@@ -9,8 +8,6 @@ interface RealTimeRefresherProps {
 }
 
 export function RealTimeRefresher({ projectId, cardId }: RealTimeRefresherProps) {
-  const router = useRouter();
-
   useEffect(() => {
     const url = new URL("/kanban-api/events", window.location.origin);
     if (projectId) {
@@ -29,7 +26,7 @@ export function RealTimeRefresher({ projectId, cardId }: RealTimeRefresherProps)
           return;
         }
 
-        router.refresh();
+        window.location.reload();
       } catch (err) {
         console.error("Failed to parse real-time event:", err);
       }
@@ -43,7 +40,7 @@ export function RealTimeRefresher({ projectId, cardId }: RealTimeRefresherProps)
     return () => {
       eventSource.close();
     };
-  }, [projectId, cardId, router]);
+  }, [projectId, cardId]);
 
   return null; // This is a logic-only component
 }
