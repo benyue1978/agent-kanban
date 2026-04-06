@@ -91,7 +91,13 @@ These may come from:
    * **Verify Environment**: Before running tests, explicitly check `DATABASE_URL` (e.g., `printenv | grep DATABASE`). It must target port `5434` and use the `agent_kanban_dev` database name.
    * **No Manual Truncation**: Use provided test runners that respect `.env.dev`.
 
-7. **Prefer structured commands for critical updates**
+7. **Workflow Hard Gates**
+
+   * **Planning Gate (`New -> Ready`)**: Must finish planning. Must include detailed, placeholder-free description. Agents move to Ready ONLY after brainstorming and obtaining an approved spec/plan.
+   * **Implementation Gate**: No implementation code (writing logic) should be written while a card is in the `Ready` state. The agent MUST move the card to `In Progress` before starting implementation.
+   * **Completion Gate (`In Progress -> Done`)**: Must pass tests, commit all changes, and push to origin. `Final Summary` MUST include explicit links to commits or PRs as evidence of persistence.
+
+8. **Prefer structured commands for critical updates**
 
    * use structured commands for state, ownership, summary, and comments
    * use full markdown roundtrip for larger planning edits
@@ -141,8 +147,9 @@ Typical agent flow:
 3. inspect current repo state
 4. verify collaborator IDs (default: `agent` for agents, `human` for humans)
 5. claim or confirm ownership if needed
-6. perform work in repo
-7. leave progress comments
+6. **Move card to In Progress**: No implementation work should start until the card is in the `In Progress` state.
+7. perform work in repo
+8. leave progress comments
 8. update summary
 9. add verification evidence when the task is complete enough
 10. move card through workflow
