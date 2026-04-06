@@ -93,8 +93,8 @@ These may come from:
 
 7. **Workflow Hard Gates**
 
-   * **Planning Gate (`New -> Ready`)**: Must finish planning. Must include detailed, placeholder-free description. Agents move to Ready ONLY after brainstorming and obtaining an approved spec/plan. Descriptions MUST include Goal, Context, Scope, and Definition of Done.
-   * **Implementation Gate**: No implementation code (writing logic) should be written while a card is in the `Ready` state. The agent MUST move the card to `In Progress` before starting implementation.
+   * **Planning Gate (`New -> Ready`)**: The agent MUST discuss the task with the human via chat to finalize the design. Once a spec/plan is approved by the human, the agent updates the card with a detailed, placeholder-free description and moves the card to `Ready`. Descriptions MUST include Goal, Context, Scope, and Definition of Done.
+   * **Implementation Gate**: The agent MUST obtain human approval to start development. No implementation code (writing logic) should be written while a card is in the `Ready` state. The agent MUST move the card to `In Progress` before starting implementation.
    * **Completion Gate (`In Progress -> Done`)**: Must pass tests, commit all changes, and push to origin. `Final Summary` MUST include:
      - "What was done" section.
      - "Result / Links" section with explicit links to commits or PRs as evidence of persistence.
@@ -109,22 +109,19 @@ These may come from:
 
 ## 1. Getting a Task
 
-Agents can get work in two ways:
+Agents get work by discussing requirements with the human via chat. The agent is responsible for:
 
-- explicit human instruction
-- list and inspect assigned tasks
+- translating the human's request into a new Kanban card
+- assigning the card to itself
+- moving the card through the workflow as the task progresses
 
-Examples:
+Examples of CLI usage for these actions:
 
-`kanban projects list`
-`kanban cards list --assigned-to agent`
-`kanban cards list --state ready`
+`kanban cards create --title "Implement X" --description-file task.md`
+`kanban cards assign-owner --id 123 --to agent`
+`kanban cards set-state --id 123 --to ready`
 
-Unless project policy explicitly allows picking unassigned Ready cards, the agent should not claim arbitrary work on its own.
-
-If project policy allows claiming an unassigned Ready card, the agent should still follow the default selection policy and let backend enforce claim safety.
-
-Card commands infer the current project from the checkout's git `origin` URL when possible. If inference fails or is ambiguous, run `kanban projects list` and retry with `--project <project-id>`.
+Unless the human explicitly creates and assigns a card, the agent should take the initiative to document and manage the task in the Kanban system based on the chat discussion.
 
 ## 2. Understanding a Card
 

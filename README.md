@@ -2,14 +2,14 @@
 
 AI-native Kanban for human + agent software delivery.
 
-`agent-kanban` is a local-first Kanban system built for repositories where humans work in a browser and agents work from the CLI, while both operate against the same backend workflow rules.
+`agent-kanban` is a local-first Kanban system built for repositories where humans and agents collaborate. The human provides direction and discusses design via chat, while the agent uses the Kanban system to manage tasks, record progress, and drive the workflow to completion.
 
 It is opinionated on purpose:
 
 - cards are execution units, not loose reminders
 - workflow state is enforced by the backend
-- card history stays understandable to humans
-- agents get a stable API and CLI instead of scraping UI state
+- agents operate the system via a stable API and CLI
+- humans observe progress through the web UI
 
 ## Why This Exists
 
@@ -17,6 +17,7 @@ Most project boards are designed for humans only. Most agent workflows are glued
 
 - the repo remains the source of implementation truth
 - the Kanban system remains the source of process truth
+- the agent is the primary operator of the Kanban system
 - the card remains the source of execution context
 
 That separation makes the system usable for real software work, not just demos.
@@ -26,8 +27,8 @@ That separation makes the system usable for real software work, not just demos.
 The current vertical slice is working locally and includes:
 
 - PostgreSQL-backed API with enforced workflow transitions
-- CLI for agent-oriented task execution
-- Next.js web UI for board, card detail, inbox, and focused human card actions
+- CLI for human and agent-oriented task execution
+- Next.js web UI for observing board, card detail, and inbox
 - comment mentions, inbox items, audit history, and revision-aware writes
 - plan import, bootstrap import, and end-to-end verification scripts
 
@@ -40,8 +41,8 @@ Workflow in the current slice:
 This repo is a modular monolith with three runtime surfaces:
 
 - `apps/api` - Fastify API and Prisma-backed persistence
-- `apps/cli` - agent-facing CLI that talks only to the API
-- `apps/web` - human-facing Next.js UI
+- `apps/cli` - agent-facing CLI that talks to the API
+- `apps/web` - human-facing Next.js UI for observation and status tracking
 
 Shared packages:
 
@@ -223,22 +224,27 @@ pnpm cli:uninstall
 
 If `pnpm cli:install` fails because your shell does not know the pnpm global bin directory yet, run `pnpm setup`, restart the shell, and retry. Global install is a one-time machine setup for agent workflows. It is intentionally separate from `pnpm start` so starting the stack does not mutate global shell state.
 
-The web UI is meant for humans. The CLI is meant for agents and automation. Both should rely on the same backend behavior rather than duplicating workflow logic.
+The CLI is the primary interaction point for agents. The web UI provides a high-level view of progress and board state for humans. Both rely on the same backend behavior rather than duplicating workflow logic.
 
 ## Using The System
 
 ### For humans
 
-- open the board in the web UI
-- inspect card detail, comments, and timeline
-- manage inbox items triggered by mentions
-- move well-defined work into `Ready`
-- start `Ready` work in the browser when a human is taking responsibility
-- add verification comments and complete work from `In Progress` to `Done` when summary and evidence are present
+- chat with the agent to create cards, discuss design, and approve implementation plans
+- provide direction and clarification when asked by the agent via card comments
+- use the web UI to monitor the board, card details, and overall project status
 
 ### For agents
 
-Start with the repo skill at [skills/agent-kanban/SKILL.md](skills/agent-kanban/SKILL.md). That is the agent-facing operating guide for how to pick work, interpret cards, use the CLI, handle conflicts, and move cards through the workflow correctly.
+The agent is the primary operator of the Kanban system.
+
+Start with the repo skill at [skills/agent-kanban/SKILL.md](skills/agent-kanban/SKILL.md). That is the agent-facing operating guide for how to pick work, collaborate with humans, use the CLI, and move cards through the workflow correctly.
+
+The agent's role is to:
+- translate human instructions into Kanban tasks (cards)
+- manage card state and ownership according to the workflow rules
+- record decisions and progress via card comments and the final summary
+- execute implementation and verification tasks within the repository
 
 For plan-driven work, the intended loop is:
 
