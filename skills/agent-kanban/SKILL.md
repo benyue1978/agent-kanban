@@ -21,9 +21,20 @@ This skill assumes the system model defined in the repo docs.
 
 The repository docs are the normative source for system rules.
 
-This skill operationalizes those rules for agents.
+## Agent Quick Start
 
-If workflow, policy, markdown, or CLI rules change in repo docs, this skill must be updated accordingly.
+Before starting any work, verify your environment:
+
+1. **Check Configuration**: \`kanban config --json\`
+   - Ensure \`apiUrl\` points to the correct backend (default: \`http://127.0.0.1:3001\`).
+   - Ensure \`actorId\` is set (typically \`agent\`).
+2. **Smoke Test**: \`kanban cards list --json\`
+
+**Pro-tip**: Set these environment variables in your shell to avoid passing flags:
+\`\`\`bash
+export KANBAN_API_URL=http://127.0.0.1:3001
+export KANBAN_ACTOR_ID=agent
+\`\`\`
 
 ## Runtime Model
 
@@ -117,9 +128,9 @@ Agents get work by discussing requirements with the human via chat. The agent is
 
 Examples of CLI usage for these actions:
 
-`kanban cards create --title "Implement X" --description-file task.md`
-`kanban cards assign-owner --id 123 --to agent`
-`kanban cards set-state --id 123 --to ready`
+\`kanban --api-url http://127.0.0.1:3001 cards create --title "Implement X" --description-file task.md --json\`
+\`kanban --api-url http://127.0.0.1:3001 cards assign-owner --id 123 --to agent --json\`
+\`kanban --api-url http://127.0.0.1:3001 cards set-state --id 123 --to ready --json\`
 
 Unless the human explicitly creates and assigns a card, the agent should take the initiative to document and manage the task in the Kanban system based on the chat discussion.
 
@@ -133,7 +144,7 @@ Before working, focus on:
 - Definition of Done
 - Constraints
 - Final Summary, if present
-- recent comments, especially `question` and `decision`
+- recent comments, especially \`question\` and \`decision\`
 
 The repo remains the source of truth for code and detailed artifacts.
 
@@ -146,9 +157,9 @@ Typical agent flow:
 1. identify the target card
 2. read card content
 3. inspect current repo state
-4. verify collaborator IDs (default: `agent` for agents, `human` for humans)
+4. verify collaborator IDs (default: \`agent\` for agents, \`human\` for humans)
 5. claim or confirm ownership if needed
-6. **Move card to In Progress**: No implementation work should start until the card is in the `In Progress` state.
+6. **Move card to In Progress**: No implementation work should start until the card is in the \`In Progress\` state.
 7. perform work in repo
 8. leave progress comments
 8. update summary
@@ -156,11 +167,11 @@ Typical agent flow:
 10. move card through workflow
 
 **Workspace Hygiene Mandate**:
-- Do NOT create temporary `.md` files in the repository root.
+- Do NOT create temporary \`.md\` files in the repository root.
 - Use the project's temporary directory (as provided in the session context) for staging larger edits.
-- Prefer using shell pipes with the `--file -` convention for large text updates (e.g., `cat card.md | kanban cards update --id 123 --file - --revision 1`).
+- Prefer using shell pipes with the \`--file -\` convention for large text updates (e.g., \`cat card.md | kanban cards update --id 123 --file - --revision 1 --json\`).
 
-If the task came from an approved implementation plan, also inspect any linked `sourceTaskId`, plan path, and spec path on the card before making execution choices.
+If the task came from an approved implementation plan, also inspect any linked \`sourceTaskId\`, plan path, and spec path on the card before making execution choices.
 
 Do not use a CLI plan-import command. If cards need to be created from a plan markdown file, parse the plan in the agent workflow and create cards task-by-task.
 
@@ -170,25 +181,25 @@ Prefer these commands for critical updates:
 
 ### Set state
 
-`kanban cards set-state --id 123 --to in-progress --owner agent --actor human`
+\`kanban --api-url http://127.0.0.1:3001 cards set-state --id 123 --to in-progress --owner agent --actor human --json\`
 
 ### Assign owner
 
-`kanban cards assign-owner --id 123 --to agent`
+\`kanban --api-url http://127.0.0.1:3001 cards assign-owner --id 123 --to agent --json\`
 
 ### Append summary
 
-`kanban cards append-summary --id 123 --file summary.md`
+\`kanban --api-url http://127.0.0.1:3001 cards append-summary --id 123 --file summary.md --json\`
 
 ### Add comment
 
-`kanban cards comment --id 123 --body "..." --kind progress --author agent`
+\`kanban --api-url http://127.0.0.1:3001 cards comment --id 123 --body "..." --kind progress --author agent --json\`
 
 Use full markdown roundtrip when editing planning content or larger descriptive sections:
 
-`kanban cards show --id 123 > card.md`
+\`kanban --api-url http://127.0.0.1:3001 cards show --id 123 > card.md\`
 edit locally
-`kanban cards update --id 123 --file card.md --revision <known_revision> --actor agent`
+\`kanban --api-url http://127.0.0.1:3001 cards update --id 123 --file card.md --revision <known_revision> --actor agent --json\`
 
 ## 5. Comment Usage
 

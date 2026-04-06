@@ -5,6 +5,7 @@ import { runAppendSummaryCommand } from "./commands/append-summary.js";
 import { runAssignOwnerCommand } from "./commands/assign-owner.js";
 import { runCommentCommand } from "./commands/comment.js";
 import type { CommandEnvironment } from "./commands/common.js";
+import { runConfigCommand } from "./commands/config.js";
 import { runCreateCommand } from "./commands/create.js";
 import { runListCommand } from "./commands/list.js";
 import { runProjectsCreateCommand } from "./commands/projects-create.js";
@@ -80,6 +81,7 @@ function extractGlobalOptions(argv: string[]): {
 
 function topLevelHelp(): string {
   return `Usage:
+  kanban [--api-url <url>] config [--json]
   kanban [--api-url <url>] projects list [--json]
   kanban [--api-url <url>] projects create [--name <name>] [--repo-url <url>] [--description <text>] [--policy-file <path>] [--json]
   kanban [--api-url <url>] cards list [--project <id>] [--state <new|ready|in-progress|done>] [--assigned-to <id>] [--json]
@@ -118,6 +120,10 @@ async function dispatchCommand(
 ): Promise<unknown> {
   const client = new ApiClient(env.apiUrl ?? defaultApiUrl);
   const context = { args, client, env };
+
+  if (resource === "config") {
+    return await runConfigCommand(context);
+  }
 
   if (resource === "projects") {
     return action === "list"
