@@ -150,20 +150,6 @@ The system is considered successful when all of the following are true:
 - new work is planned through the running system
 - the system is used to manage at least part of its own future development
 
-## Seed Doc Handling
-
-Bootstrap planning docs may remain in the repo after backfill, but:
-
-- they should no longer act as the active task tracker
-- they should be marked as historical or backfilled
-- active task state should live in the running system
-
-Recommended marking approaches:
-
-- front matter such as `status: backfilled`
-- dedicated seed-doc directory
-- filename convention indicating historical status
-
 ## Policy Requirements
 
 V1 must support minimal project policy controls, including:

@@ -152,12 +152,6 @@ pnpm test
 
 `pnpm test` always loads `.env.dev` and should be treated as a development-only flow.
 
-### 6. Seed the initial historical cards
-
-```bash
-node scripts/backfill-initial-cards.ts
-```
-
 ### 6. Run the full vertical-slice verifier
 
 ```bash
@@ -315,8 +309,6 @@ packages/
   contracts/
   domain/
   card-markdown/
-bootstrap/
-  initial-cards.md
 docs/
   project-overview.md
   *.md product and system docs
