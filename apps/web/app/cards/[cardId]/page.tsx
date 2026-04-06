@@ -13,11 +13,10 @@ export default async function CardPage({
   const { cardId } = await params;
   const card = await fetchCard(cardId);
   const humanActorId = getHumanActorId();
-  const apiUrl = getApiBaseUrl();
 
   return (
     <main>
-      <RealTimeRefresher cardId={cardId} apiUrl={apiUrl} />
+      <RealTimeRefresher cardId={cardId} />
       <CardDetail card={card} humanActorId={humanActorId} />
     </main>
   );

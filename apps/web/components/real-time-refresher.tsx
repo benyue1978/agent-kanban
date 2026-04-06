@@ -6,14 +6,13 @@ import { useRouter } from "next/navigation";
 interface RealTimeRefresherProps {
   projectId?: string;
   cardId?: string;
-  apiUrl: string;
 }
 
-export function RealTimeRefresher({ projectId, cardId, apiUrl }: RealTimeRefresherProps) {
+export function RealTimeRefresher({ projectId, cardId }: RealTimeRefresherProps) {
   const router = useRouter();
 
   useEffect(() => {
-    const url = new URL("/events", apiUrl);
+    const url = new URL("/kanban-api/events", window.location.origin);
     if (projectId) {
       url.searchParams.set("projectId", projectId);
     }

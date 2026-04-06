@@ -31,11 +31,10 @@ export default async function ProjectBoardPage({
 
   const board = await fetchBoard(project.id);
   const humanActorId = getHumanActorId();
-  const apiUrl = getApiBaseUrl();
 
   return (
     <main className="mx-auto flex w-full max-w-[1600px] flex-col gap-8 px-4 py-10 md:px-8">
-      <RealTimeRefresher projectId={project.id} apiUrl={apiUrl} />
+      <RealTimeRefresher projectId={project.id} />
       <section className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
         <div className="flex max-w-3xl flex-col gap-3">
           <Badge variant="outline">Project {project.name}</Badge>
