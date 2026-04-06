@@ -147,6 +147,11 @@ Typical agent flow:
 9. add verification evidence when the task is complete enough
 10. move card through workflow
 
+**Workspace Hygiene Mandate**:
+- Do NOT create temporary `.md` files in the repository root.
+- Use the project's temporary directory (`/Users/song.yue/.gemini/tmp/agent-kanban`) for staging larger edits.
+- Prefer using shell pipes with the `--file -` convention for large text updates (e.g., `cat card.md | kanban cards update --id 123 --file - --revision 1`).
+
 If the task came from an approved implementation plan, also inspect any linked `sourceTaskId`, plan path, and spec path on the card before making execution choices.
 
 Do not use a CLI plan-import command. If cards need to be created from a plan markdown file, parse the plan in the agent workflow and create cards task-by-task.
@@ -307,6 +312,7 @@ Do not:
 - assume local repo path is the project identity
 - bypass structured commands for critical updates unless necessary
 - use old flat CLI commands
+- create temporary `.md` files in the workspace root
 
 ## 11. Working Philosophy
 
