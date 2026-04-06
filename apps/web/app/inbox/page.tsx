@@ -1,5 +1,4 @@
 import { InboxList } from "@/components/inbox-list";
-import { RealTimeRefresher } from "@/components/real-time-refresher";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { fetchInbox } from "@/lib/api";
@@ -30,7 +29,6 @@ export default async function InboxPage() {
 
   return (
     <main className="mx-auto flex w-full max-w-6xl flex-col gap-8 px-4 py-10 md:px-8">
-      <RealTimeRefresher />
       <section className="grid gap-4 lg:grid-cols-[minmax(0,1.4fr)_320px]">
         <div className="flex flex-col gap-3">
           <Badge variant="outline">Inbox</Badge>

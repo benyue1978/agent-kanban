@@ -1,10 +1,10 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { BoardColumn } from "@/components/board-column";
-import { RealTimeRefresher } from "@/components/real-time-refresher";
+import { PollingRefresher } from "@/components/polling-refresher";
 import { Badge } from "@/components/ui/badge";
 import { fetchBoard, fetchProjects } from "@/lib/api";
-import { getApiBaseUrl, getHumanActorId } from "@/lib/config";
+import { getHumanActorId } from "@/lib/config";
 import { resolveProjectRef } from "@/lib/projects";
 
 export const dynamic = "force-dynamic";
@@ -34,7 +34,7 @@ export default async function ProjectBoardPage({
 
   return (
     <main className="mx-auto flex w-full max-w-[1600px] flex-col gap-8 px-4 py-10 md:px-8">
-      <RealTimeRefresher projectId={project.id} />
+      <PollingRefresher />
       <section className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
         <div className="flex max-w-3xl flex-col gap-3">
           <Badge variant="outline">Project {project.name}</Badge>

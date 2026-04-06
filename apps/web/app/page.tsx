@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { PollingRefresher } from "@/components/polling-refresher";
 import { fetchProjects } from "@/lib/api";
 import { buildProjectHref } from "@/lib/projects";
 
@@ -9,6 +10,7 @@ export default async function HomePage() {
 
   return (
     <main className="mx-auto flex w-full max-w-5xl flex-col gap-8 px-4 py-10 md:px-8">
+      <PollingRefresher />
       <section className="flex flex-col gap-3">
         <p className="text-sm font-medium uppercase tracking-[0.24em] text-muted-foreground">
           agent-kanban
