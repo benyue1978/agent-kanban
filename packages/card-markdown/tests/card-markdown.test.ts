@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   appendCompletionSummary,
   getProtectedSections,
+  isSectionComplete,
   validateCompletionSummary,
 } from "../src/index.js";
 
@@ -19,6 +20,9 @@ Create the service
 ## Final Summary
 ### What was done
 Built the API
+
+### Result / Links
+Commit: abc1234
 
 ### DoD Check
 - [x] tests`;
@@ -44,11 +48,44 @@ describe("card markdown", () => {
     expect(() => validateCompletionSummary(sample)).not.toThrow();
   });
 
-  it("accepts completion when DoD Check is omitted from the final summary", () => {
+  it("rejects completion when Result / Links is missing", () => {
     expect(() =>
       validateCompletionSummary(`## Final Summary
 ### What was done
 Shipped it`)
+    ).toThrowError(/must include 'Result \/ Links'/);
+  });
+
+  it("rejects completion when Result / Links has no evidence (URL or hash)", () => {
+    expect(() =>
+      validateCompletionSummary(`## Final Summary
+### What was done
+Shipped it
+
+### Result / Links
+Done locally`)
+    ).toThrowError(/must contain a URL or git hash/);
+  });
+
+  it("accepts a valid completion summary with git hash", () => {
+    expect(() =>
+      validateCompletionSummary(`## Final Summary
+### What was done
+Shipped it
+
+### Result / Links
+Commit: abc1234`)
+    ).not.toThrow();
+  });
+
+  it("accepts a valid completion summary with URL", () => {
+    expect(() =>
+      validateCompletionSummary(`## Final Summary
+### What was done
+Shipped it
+
+### Result / Links
+PR: https://github.com/org/repo/pull/1`)
     ).not.toThrow();
   });
 
@@ -105,5 +142,14 @@ Used Fastify`
 
 ### Key Decisions
 Used Fastify`);
+  });
+
+  describe("placeholder detection", () => {
+    it("detects TBD, TODO, and unchecked checkboxes", () => {
+      expect(isSectionComplete("Has TBD")).toBe(false);
+      expect(isSectionComplete("Has TODO")).toBe(false);
+      expect(isSectionComplete("Has [ ]")).toBe(false);
+      expect(isSectionComplete("Complete section")).toBe(true);
+    });
   });
 });
