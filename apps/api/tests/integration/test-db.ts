@@ -6,29 +6,41 @@ export function createTestPrisma(): PrismaClient {
 }
 
 export async function resetDatabase(prisma: PrismaClient): Promise<void> {
-  // --- SAFETY GUARD ---
-  // Ensure we are not connected to the production database.
-  // Production URL usually contains port 5433 or database name 'agent_kanban' (without _dev).
-  const databaseUrl = process.env.DATABASE_URL ?? "";
-  const isProdPort = databaseUrl.includes(":5433");
-  const isProdDb = databaseUrl.includes("/agent_kanban") && !databaseUrl.includes("/agent_kanban_dev");
+  // Use a raw client for reset to bypass any extensions that might interfere
+  const rawClient = new PrismaClient({
+    datasources: {
+      db: {
+        url: process.env.DATABASE_URL,
+      },
+    },
+  });
 
-  if (isProdPort || isProdDb) {
-    throw new Error(
-      `CRITICAL SAFETY VIOLATION: Attempted to run resetDatabase on production-like database URL: ${databaseUrl}. ` +
-      `Tests must only run against the development/test database (port 5434, name agent_kanban_dev).`
+  try {
+    // --- SAFETY GUARD ---
+    // Ensure we are not connected to the production database.
+    const databaseUrl = process.env.DATABASE_URL ?? "";
+    const isProdPort = databaseUrl.includes(":5433");
+    const isProdDb = databaseUrl.includes("/agent_kanban") && !databaseUrl.includes("/agent_kanban_dev");
+
+    if (isProdPort || isProdDb) {
+      throw new Error(
+        `CRITICAL SAFETY VIOLATION: Attempted to run resetDatabase on production-like database URL: ${databaseUrl}. ` +
+        `Tests must only run against the development/test database (port 5434, name agent_kanban_dev).`
+      );
+    }
+    // --------------------
+
+    await rawClient.$executeRawUnsafe(
+      `TRUNCATE TABLE
+        "events",
+        "comment_mentions",
+        "comments",
+        "cards",
+        "collaborators",
+        "projects"
+      RESTART IDENTITY CASCADE`
     );
+  } finally {
+    await rawClient.$disconnect();
   }
-  // --------------------
-
-  await prisma.$executeRawUnsafe(
-    `TRUNCATE TABLE
-      "events",
-      "comment_mentions",
-      "comments",
-      "cards",
-      "collaborators",
-      "projects"
-    RESTART IDENTITY CASCADE`
-  );
 }

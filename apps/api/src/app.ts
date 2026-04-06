@@ -5,6 +5,7 @@ import { cardRoutes } from "./routes/cards.js";
 import { inboxRoutes } from "./routes/inbox.js";
 import { projectRoutes } from "./routes/projects.js";
 import { ApiError } from "./services/card-service.js";
+import { SummaryValidationError } from "@agent-kanban/card-markdown";
 
 declare module "fastify" {
   interface FastifyInstance {
@@ -27,6 +28,15 @@ export async function buildApp(options: BuildAppOptions = {}): Promise<FastifyIn
           code: error.code,
           message: error.message,
           ...(error.details === undefined ? {} : { details: error.details }),
+        },
+      });
+    }
+
+    if (error instanceof SummaryValidationError) {
+      return reply.code(400).send({
+        error: {
+          code: "summary_required",
+          message: error.message,
         },
       });
     }

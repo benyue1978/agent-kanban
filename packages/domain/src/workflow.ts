@@ -19,6 +19,7 @@ export interface WorkflowTransitionInput {
   humanInstructionGranted?: boolean;
   requiredSectionsPresent?: boolean;
   summaryPresent?: boolean;
+  dodCheckPresent?: boolean;
   verificationEvidencePresent?: boolean;
 }
 
@@ -111,6 +112,14 @@ export function canTransition(input: WorkflowTransitionInput): void {
       throwWorkflowError(
         "summary_required",
         "a final summary is required before a card can be completed",
+        { from: input.from, to: input.to }
+      );
+    }
+
+    if (input.dodCheckPresent !== true) {
+      throwWorkflowError(
+        "missing_required_section",
+        "a Definition of Done check is required in the final summary before completion",
         { from: input.from, to: input.to }
       );
     }

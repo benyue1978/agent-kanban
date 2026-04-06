@@ -93,9 +93,13 @@ These may come from:
 
 7. **Workflow Hard Gates**
 
-   * **Planning Gate (`New -> Ready`)**: Must finish planning. Must include detailed, placeholder-free description. Agents move to Ready ONLY after brainstorming and obtaining an approved spec/plan.
+   * **Planning Gate (`New -> Ready`)**: Must finish planning. Must include detailed, placeholder-free description. Agents move to Ready ONLY after brainstorming and obtaining an approved spec/plan. Descriptions MUST include Goal, Context, Scope, and Definition of Done.
    * **Implementation Gate**: No implementation code (writing logic) should be written while a card is in the `Ready` state. The agent MUST move the card to `In Progress` before starting implementation.
-   * **Completion Gate (`In Progress -> Done`)**: Must pass tests, commit all changes, and push to origin. `Final Summary` MUST include explicit links to commits or PRs as evidence of persistence.
+   * **Completion Gate (`In Progress -> Done`)**: Must pass tests, commit all changes, and push to origin. `Final Summary` MUST include:
+     - "What was done" section.
+     - "Result / Links" section with explicit links to commits or PRs as evidence of persistence.
+     - "DoD Check" section verifying all requirements.
+   * **Evidence Requirement**: Verification evidence (e.g., test output, screenshots, or logs) MUST be recorded as a `verification` kind comment on the card timeline before completion.
 
 8. **Prefer structured commands for critical updates**
 

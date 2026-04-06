@@ -8,8 +8,8 @@ const prisma = createTestPrisma();
 async function seedWorkflowFixture(client: PrismaClient): Promise<void> {
   await client.project.create({
     data: {
-      id: "project-1",
-      name: "agent-kanban",
+      id: "project-workflow",
+      name: "agent-kanban-workflow",
       repoUrl: "https://example.com/repo.git",
       policyJson: {
         allowAgentPickUnassignedReady: true,
@@ -20,7 +20,7 @@ async function seedWorkflowFixture(client: PrismaClient): Promise<void> {
 
   await client.collaborator.create({
     data: {
-      id: "agent-1",
+      id: "agent-workflow-1",
       kind: "agent",
       displayName: "Agent One",
     },
@@ -28,7 +28,7 @@ async function seedWorkflowFixture(client: PrismaClient): Promise<void> {
 
   await client.collaborator.create({
     data: {
-      id: "agent-2",
+      id: "agent-workflow-2",
       kind: "agent",
       displayName: "Agent Two",
     },
@@ -36,19 +36,22 @@ async function seedWorkflowFixture(client: PrismaClient): Promise<void> {
 
   await client.card.create({
     data: {
-      id: "card-1",
-      projectId: "project-1",
+      id: "card-workflow-1",
+      projectId: "project-workflow",
       title: "Backend skeleton",
       descriptionMd: `# Backend skeleton
 
 ## Goal
 Ship it
 
+## Context
+Initial setup
+
 ## Scope
 Build it
 
 ## Definition of Done
-- [ ] tests`,
+- [x] tests`,
       revision: 1,
       state: "Ready",
     },
@@ -56,8 +59,8 @@ Build it
 
   await client.card.create({
     data: {
-      id: "card-2",
-      projectId: "project-1",
+      id: "card-workflow-2",
+      projectId: "project-workflow",
       title: "Stale update target",
       descriptionMd: "# current",
       revision: 2,
@@ -81,13 +84,13 @@ describe.sequential("workflow routes", () => {
 
     const first = await app.inject({
       method: "POST",
-      url: "/cards/card-1/set-state",
-      payload: { to: "In Progress", ownerId: "agent-1" },
+      url: "/cards/card-workflow-1/set-state",
+      payload: { to: "In Progress", ownerId: "agent-workflow-1", humanInstructionGranted: true },
     });
     const second = await app.inject({
       method: "POST",
-      url: "/cards/card-1/set-state",
-      payload: { to: "In Progress", ownerId: "agent-2" },
+      url: "/cards/card-workflow-1/set-state",
+      payload: { to: "In Progress", ownerId: "agent-workflow-2", humanInstructionGranted: true },
     });
 
     expect(first.statusCode).toBe(200);
@@ -106,8 +109,8 @@ describe.sequential("workflow routes", () => {
     expect(response.statusCode).toBe(200);
     expect(response.json().projects).toHaveLength(1);
     expect(response.json().projects[0]).toMatchObject({
-      id: "project-1",
-      name: "agent-kanban",
+      id: "project-workflow",
+      name: "agent-kanban-workflow",
       repoUrl: "https://example.com/repo.git",
     });
   });
@@ -119,7 +122,7 @@ describe.sequential("workflow routes", () => {
       method: "POST",
       url: "/projects",
       payload: {
-        name: "agent-kanban",
+        name: "agent-kanban-workflow", // already exists from seed
         repoUrl: "https://example.com/another-repo.git",
       },
     });
@@ -135,18 +138,21 @@ describe.sequential("workflow routes", () => {
       method: "POST",
       url: "/cards",
       payload: {
-        projectId: "project-1",
+        projectId: "project-workflow",
         title: "Backend skeleton",
         descriptionMd: `# Backend skeleton duplicate
 
 ## Goal
 Ship it again
 
+## Context
+Initial vertical slice
+
 ## Scope
 Build it again
 
 ## Definition of Done
-- [ ] tests`,
+- [x] tests`,
       },
     });
 
@@ -159,7 +165,7 @@ Build it again
 
     const response = await app.inject({
       method: "POST",
-      url: "/cards/card-2/update-markdown",
+      url: "/cards/card-workflow-2/update-markdown",
       payload: { revision: 1, descriptionMd: "# stale" },
     });
 
@@ -172,9 +178,9 @@ Build it again
 
     const response = await app.inject({
       method: "POST",
-      url: "/cards/card-2/set-priority",
+      url: "/cards/card-workflow-2/set-priority",
       payload: {
-        actorId: "agent-1",
+        actorId: "agent-workflow-1",
         revision: 2,
         priority: 1,
       },
@@ -190,9 +196,9 @@ Build it again
 
     const first = await app.inject({
       method: "POST",
-      url: "/cards/card-2/set-priority",
+      url: "/cards/card-workflow-2/set-priority",
       payload: {
-        actorId: "agent-1",
+        actorId: "agent-workflow-1",
         revision: 2,
         priority: 1,
       },
@@ -200,9 +206,9 @@ Build it again
 
     const second = await app.inject({
       method: "POST",
-      url: "/cards/card-2/set-priority",
+      url: "/cards/card-workflow-2/set-priority",
       payload: {
-        actorId: "agent-1",
+        actorId: "agent-workflow-1",
         revision: 2,
         priority: 2,
       },
@@ -218,9 +224,9 @@ Build it again
 
     const first = await app.inject({
       method: "POST",
-      url: "/projects/project-1/import-plan",
+      url: "/projects/project-workflow/import-plan",
       payload: {
-        actorId: "agent-1",
+        actorId: "agent-workflow-1",
         tasks: [
           {
             sourceTaskId: "task-1",
@@ -228,7 +234,19 @@ Build it again
             sourcePlanPath: "docs/superpowers/plans/example.md",
             sourceSpecPath: "docs/superpowers/specs/example.md",
             title: "Imported task",
-            descriptionMd: "# Imported task",
+            descriptionMd: `# Imported task
+
+## Goal
+Implement it
+
+## Context
+Planning
+
+## Scope
+Build
+
+## Definition of Done
+- [x] done`,
           },
         ],
       },
@@ -239,9 +257,9 @@ Build it again
 
     const second = await app.inject({
       method: "POST",
-      url: "/projects/project-1/import-plan",
+      url: "/projects/project-workflow/import-plan",
       payload: {
-        actorId: "agent-1",
+        actorId: "agent-workflow-1",
         tasks: [
           {
             sourceTaskId: "task-1",
@@ -249,7 +267,19 @@ Build it again
             sourcePlanPath: "docs/superpowers/plans/example.md",
             sourceSpecPath: "docs/superpowers/specs/example.md",
             title: "Imported task",
-            descriptionMd: "# Imported task",
+            descriptionMd: `# Imported task
+
+## Goal
+Implement it
+
+## Context
+Planning
+
+## Scope
+Build
+
+## Definition of Done
+- [x] done`,
           },
         ],
       },
@@ -268,8 +298,8 @@ Build it again
       method: "POST",
       url: `/cards/${importedCardId}/assign-owner`,
       payload: {
-        actorId: "agent-1",
-        ownerId: "agent-1",
+        actorId: "agent-workflow-1",
+        ownerId: "agent-workflow-1",
         revision: importedCard.revision,
       },
     });
@@ -278,8 +308,8 @@ Build it again
       method: "POST",
       url: `/cards/${importedCardId}/set-state`,
       payload: {
-        actorId: "agent-1",
-        ownerId: "agent-1",
+        actorId: "agent-workflow-1",
+        ownerId: "agent-workflow-1",
         to: "In Progress",
       },
     });
@@ -287,9 +317,9 @@ Build it again
 
     const protectedResponse = await app.inject({
       method: "POST",
-      url: "/projects/project-1/import-plan",
+      url: "/projects/project-workflow/import-plan",
       payload: {
-        actorId: "agent-1",
+        actorId: "agent-workflow-1",
         tasks: [
           {
             sourceTaskId: "task-1",
@@ -297,7 +327,19 @@ Build it again
             sourcePlanPath: "docs/superpowers/plans/example.md",
             sourceSpecPath: "docs/superpowers/specs/example.md",
             title: "Imported task updated",
-            descriptionMd: "# Imported task updated",
+            descriptionMd: `# Imported task updated
+
+## Goal
+Implement it
+
+## Context
+Planning
+
+## Scope
+Build
+
+## Definition of Done
+- [x] done`,
           },
         ],
       },
@@ -313,9 +355,9 @@ Build it again
     // Card 2 is New and has "# current" (incomplete)
     const response = await app.inject({
       method: "POST",
-      url: "/cards/card-2/set-state",
+      url: "/cards/card-workflow-2/set-state",
       payload: {
-        actorId: "agent-1", 
+        actorId: "agent-workflow-1", 
         to: "Ready",
         revision: 2,
       },

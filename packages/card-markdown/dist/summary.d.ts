@@ -6,6 +6,7 @@ export declare class SummaryAppendError extends Error {
     readonly code = "invalid_summary_append";
     constructor(message: string);
 }
+export declare function isSectionComplete(content: string): boolean;
 export declare function validateCompletionSummary(markdown: string): void;
 export declare function appendCompletionSummary(markdown: string, summaryMarkdown: string): string;
 //# sourceMappingURL=summary.d.ts.map

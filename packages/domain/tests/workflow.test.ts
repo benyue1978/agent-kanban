@@ -111,6 +111,23 @@ describe("workflow", () => {
     ).toBe("summary_required");
   });
 
+  it("requires DoD check in summary before completion", () => {
+    expect(
+      getErrorCode(() =>
+        canTransition({
+          from: "In Progress",
+          to: "Done",
+          actorKind: "human",
+          actorId: "human-1",
+          ownerId: "human-1",
+          summaryPresent: true,
+          dodCheckPresent: false,
+          verificationEvidencePresent: true,
+        })
+      )
+    ).toBe("missing_required_section");
+  });
+
   it("requires verification evidence before completion", () => {
     expect(
       getErrorCode(() =>

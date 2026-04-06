@@ -8,8 +8,8 @@ const prisma = createTestPrisma();
 async function seedCommentFixture(client: PrismaClient): Promise<void> {
   await client.project.create({
     data: {
-      id: "project-1",
-      name: "agent-kanban",
+      id: "project-comment-inbox",
+      name: "comment-inbox-test",
       repoUrl: "https://example.com/repo.git",
       policyJson: {
         allowAgentPickUnassignedReady: true,
@@ -45,20 +45,23 @@ async function seedCommentFixture(client: PrismaClient): Promise<void> {
 
   await client.card.create({
     data: {
-      id: "card-1",
-      projectId: "project-1",
+      id: "card-comment-inbox-1",
+      projectId: "project-comment-inbox",
       title: "Review-ready API task",
       descriptionMd: `# Review-ready API task
 
 ## Goal
 Ship comments and inbox
 
+## Context
+Testing vertical slice
+
 ## Scope
 Implement Task 7
 
 ## Definition of Done
-- [ ] comments
-- [ ] inbox`,
+- [x] comments
+- [x] inbox`,
       revision: 3,
       state: "In Progress",
       ownerId: "agent-main",
@@ -81,7 +84,7 @@ describe.sequential("comment and inbox routes", () => {
 
     const commentResponse = await app.inject({
       method: "POST",
-      url: "/cards/card-1/comments",
+      url: "/cards/card-comment-inbox-1/comments",
       payload: {
         authorId: "agent-main",
         kind: "question",
@@ -114,7 +117,7 @@ describe.sequential("comment and inbox routes", () => {
 
     const cardResponse = await app.inject({
       method: "GET",
-      url: "/cards/card-1",
+      url: "/cards/card-comment-inbox-1",
     });
 
     expect(cardResponse.statusCode).toBe(200);
@@ -127,7 +130,7 @@ describe.sequential("comment and inbox routes", () => {
 
     const assignResponse = await app.inject({
       method: "POST",
-      url: "/cards/card-1/assign-owner",
+      url: "/cards/card-comment-inbox-1/assign-owner",
       payload: {
         revision: 3,
         actorId: "human-song",
@@ -138,7 +141,7 @@ describe.sequential("comment and inbox routes", () => {
 
     const stateResponse = await app.inject({
       method: "POST",
-      url: "/cards/card-1/set-state",
+      url: "/cards/card-comment-inbox-1/set-state",
       payload: {
         actorId: "human-song",
         revision: assignResponse.json().card.revision,
@@ -150,7 +153,7 @@ describe.sequential("comment and inbox routes", () => {
 
     const markdownResponse = await app.inject({
       method: "POST",
-      url: "/cards/card-1/update-markdown",
+      url: "/cards/card-comment-inbox-1/update-markdown",
       payload: {
         actorId: "agent-peer",
         revision: assignResponse.json().card.revision,
@@ -159,24 +162,30 @@ describe.sequential("comment and inbox routes", () => {
 ## Goal
 Ship comments and inbox
 
+## Context
+Testing vertical slice
+
 ## Scope
 Implement Task 7 completely
 
 ## Definition of Done
 - [x] comments
-- [ ] inbox`,
+- [x] inbox`,
       },
     });
     expect(markdownResponse.statusCode).toBe(200);
 
     const summaryResponse = await app.inject({
       method: "POST",
-      url: "/cards/card-1/append-summary",
+      url: "/cards/card-comment-inbox-1/append-summary",
       payload: {
         actorId: "agent-peer",
         revision: markdownResponse.json().card.revision,
         summaryMd: `### What was done
 - Implemented comments and inbox
+
+### Result / Links
+Commit: abc1234
 
 ### DoD Check
 - [x] comments
@@ -187,7 +196,7 @@ Implement Task 7 completely
 
     const verificationComment = await app.inject({
       method: "POST",
-      url: "/cards/card-1/comments",
+      url: "/cards/card-comment-inbox-1/comments",
       payload: {
         authorId: "human-reviewer",
         kind: "verification",
@@ -198,7 +207,7 @@ Implement Task 7 completely
 
     const commentResponse = await app.inject({
       method: "POST",
-      url: "/cards/card-1/comments",
+      url: "/cards/card-comment-inbox-1/comments",
       payload: {
         authorId: "human-reviewer",
         kind: "decision",
@@ -209,7 +218,7 @@ Implement Task 7 completely
 
     const completeResponse = await app.inject({
       method: "POST",
-      url: "/cards/card-1/set-state",
+      url: "/cards/card-comment-inbox-1/set-state",
       payload: {
         actorId: "human-reviewer",
         revision: summaryResponse.json().card.revision,
@@ -220,7 +229,7 @@ Implement Task 7 completely
 
     const events = await prisma.event.findMany({
       where: {
-        cardId: "card-1",
+        cardId: "card-comment-inbox-1",
       },
       orderBy: {
         createdAt: "asc",

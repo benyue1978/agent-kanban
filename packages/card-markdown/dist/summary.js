@@ -16,6 +16,11 @@ export class SummaryAppendError extends Error {
 function normalizeBlock(markdown) {
     return markdown.trim().replace(/\n{3,}/g, "\n\n");
 }
+export function isSectionComplete(content) {
+    const placeholders = ["TBD", "TODO", "[ ]"];
+    const upperContent = content.toUpperCase();
+    return !placeholders.some((p) => upperContent.includes(p.toUpperCase()));
+}
 export function validateCompletionSummary(markdown) {
     const sections = getProtectedSections(markdown);
     if (sections.finalSummary === undefined) {
@@ -23,6 +28,15 @@ export function validateCompletionSummary(markdown) {
     }
     if (sections.finalSummaryWhatWasDone === undefined) {
         throw new SummaryValidationError("summary_required: final summary must include 'What was done'");
+    }
+    if (sections.finalSummaryResultLinks === undefined) {
+        throw new SummaryValidationError("summary_required: final summary must include 'Result / Links'");
+    }
+    const links = sections.finalSummaryResultLinks;
+    const hasGitHash = /[0-9a-f]{7,}/i.test(links);
+    const hasUrl = /https?:\/\//.test(links);
+    if (!hasGitHash && !hasUrl) {
+        throw new SummaryValidationError("summary_required: 'Result / Links' must contain a URL or git hash as evidence");
     }
 }
 export function appendCompletionSummary(markdown, summaryMarkdown) {
