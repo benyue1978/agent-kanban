@@ -116,6 +116,13 @@ export function resolveActorId(
 }
 
 export async function readTextFile(path: string): Promise<string> {
+  if (path === "-") {
+    const chunks: Buffer[] = [];
+    for await (const chunk of process.stdin) {
+      chunks.push(chunk as Buffer);
+    }
+    return Buffer.concat(chunks).toString("utf8");
+  }
   return await readFile(path, "utf8");
 }
 

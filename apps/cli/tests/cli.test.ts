@@ -416,4 +416,49 @@ describe("cli", () => {
     expect(cards.exitCode).toBe(0);
     expect(cards.stdout).toContain("cards");
   });
+
+  it("reads card description from stdin when file is '-'", async () => {
+    server.removeAllListeners("request");
+    server.on("request", (request, response) => {
+      if (request.url === "/cards" && request.method === "POST") {
+        let body = "";
+        request.on("data", (chunk) => {
+          body += String(chunk);
+        });
+        request.on("end", () => {
+          const payload = JSON.parse(body) as { descriptionMd: string; title: string };
+          response.writeHead(201, { "content-type": "application/json" });
+          response.end(
+            JSON.stringify({
+              card: {
+                id: "card-new",
+                projectId: "project-1",
+                title: payload.title,
+                descriptionMd: payload.descriptionMd,
+                state: "New",
+                revision: 1,
+              },
+            })
+          );
+        });
+        return;
+      }
+
+      response.writeHead(500, { "content-type": "application/json" });
+      response.end(JSON.stringify({ error: { code: "unexpected", message: "unexpected" } }));
+    });
+
+    const result = await runCli(
+      ["cards", "create", "--project", "project-1", "--title", "Stdin Card", "--description-file", "-", "--json"],
+      {
+        KANBAN_API_URL: serverUrl,
+      },
+      {
+        stdin: "# Stdin Description\n\n## Goal\nTest stdin",
+      }
+    );
+
+    expect(result.exitCode).toBe(0);
+    expect(JSON.parse(result.stdout).card.descriptionMd).toContain("# Stdin Description");
+  });
 });

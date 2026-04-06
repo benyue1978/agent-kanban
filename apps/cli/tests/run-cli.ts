@@ -11,7 +11,7 @@ export interface CliResult {
 export async function runCli(
   args: string[],
   env: NodeJS.ProcessEnv = {},
-  options: { cwd?: string } = {}
+  options: { cwd?: string; stdin?: string } = {}
 ): Promise<CliResult> {
   const cliEntry = path.resolve(
     path.dirname(fileURLToPath(import.meta.url)),
@@ -25,8 +25,13 @@ export async function runCli(
         ...process.env,
         ...env,
       },
-      stdio: ["ignore", "pipe", "pipe"],
+      stdio: [options.stdin !== undefined ? "pipe" : "ignore", "pipe", "pipe"],
     });
+
+    if (options.stdin !== undefined) {
+      child.stdin?.write(options.stdin);
+      child.stdin?.end();
+    }
 
     let stdout = "";
     let stderr = "";
