@@ -27,11 +27,9 @@ export function isSectionComplete(content: string): boolean {
   if (trimmed.length === 0) return false;
   
   const upperContent = trimmed.toUpperCase();
-  if (upperContent === "TBD" || upperContent === "TODO") return false;
+  if (upperContent.includes("TBD") || upperContent.includes("TODO")) return false;
+  if (trimmed.includes("[ ]")) return false;
   
-  // We allow [ ] in content because it's a valid part of a checklist (e.g. Definition of Done).
-  // The system enforces checked items elsewhere if needed, but for "presence" validation,
-  // [ ] is acceptable content.
   return true;
 }
 
