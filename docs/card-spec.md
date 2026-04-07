@@ -96,7 +96,7 @@ Before a card moves from In Progress to Done:
 - Final Summary must exist
 - verification evidence must be present on the card timeline
 
-`DoD Check` remains a useful optional section inside Final Summary, but it is no longer a hard workflow gate in V1.
+`DoD Check` is a required section inside Final Summary and is enforced as a hard workflow gate before moving to Done.
 
 ## Relationship to Repo
 
