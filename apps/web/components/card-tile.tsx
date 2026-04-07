@@ -9,7 +9,8 @@ const stateTone: Record<CardListItem["state"], string> = {
   New: "text-slate-600",
   Ready: "text-amber-700",
   "In Progress": "text-sky-700",
-  Done: "text-emerald-700",
+  "In Review": "text-purple-700",
+  Done: "text-slate-400",
 };
 
 export function CardTile({ card }: { card: CardListItem }) {
