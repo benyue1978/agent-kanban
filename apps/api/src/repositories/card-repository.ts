@@ -116,6 +116,11 @@ function toCardListItem(card: CardWithOwner): CardListItem {
         throw new Error("In Progress cards must have an owner");
       }
       return { ...base, state: CardState.InProgress, owner, summaryMd };
+    case CardState.InReview:
+      if (owner === null) {
+        throw new Error("In Review cards must have an owner");
+      }
+      return { ...base, state: CardState.InReview, owner, summaryMd };
     case CardState.Done:
       if (summaryMd === null) {
         throw new Error("Done cards must have a final summary");
@@ -140,6 +145,7 @@ function createEmptyBoard(): BoardResponse {
       [CardState.New]: { state: CardState.New, cards: [] },
       [CardState.Ready]: { state: CardState.Ready, cards: [] },
       [CardState.InProgress]: { state: CardState.InProgress, cards: [] },
+      [CardState.InReview]: { state: CardState.InReview, cards: [] },
       [CardState.Done]: { state: CardState.Done, cards: [] },
     },
   };
