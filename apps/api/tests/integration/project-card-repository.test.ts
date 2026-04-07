@@ -85,4 +85,15 @@ describe.sequential("project and card repositories", () => {
       })
     ).rejects.toMatchObject({ code: "P2002" });
   });
+
+  it("includes the In Review state in the project list", async () => {
+    const projects = new ProjectRepository(prisma);
+    const project = await projects.create({
+      name: "test-project",
+      repoUrl: "test-repo",
+    });
+
+    const projectList = await projects.list();
+    expect(projectList[0].countsByState).toHaveProperty("In Review");
+  });
 });
