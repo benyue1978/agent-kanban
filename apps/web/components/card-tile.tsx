@@ -25,9 +25,9 @@ export function CardTile({ card }: { card: CardListItem }) {
         <CardContent className="flex flex-col gap-4 p-4">
           <div className="flex items-start justify-between gap-3">
             <div className="flex flex-col gap-2">
-              <div className="flex items-center gap-2 text-[11px] font-medium uppercase tracking-[0.22em] text-muted-foreground">
-                <span>{card.id}</span>
-                <CircleDot className={cn("size-3", stateTone[card.state])} />
+              <div className="flex items-center gap-2 text-[10px] font-medium uppercase tracking-[0.22em] text-muted-foreground">
+                <span className="truncate">{card.id}</span>
+                <CircleDot className={cn("size-3 shrink-0", stateTone[card.state])} />
               </div>
               <h3 className="text-pretty text-base font-semibold tracking-[-0.02em] text-foreground">
                 {card.title}
