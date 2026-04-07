@@ -1,5 +1,7 @@
 import Link from "next/link";
 import { PollingRefresher } from "@/components/polling-refresher";
+import { Badge } from "@/components/ui/badge";
+import { Card, CardContent } from "@/components/ui/card";
 import { fetchProjects } from "@/lib/api";
 import { buildProjectHref } from "@/lib/projects";
 
@@ -28,16 +30,33 @@ export default async function HomePage() {
           <Link
             key={project.id}
             href={buildProjectHref(project)}
-            className="rounded-[1.6rem] border border-border/60 bg-white/75 px-6 py-5 shadow-[0_20px_60px_-38px_rgba(15,23,42,0.45)] transition hover:bg-white"
+            className="group block transition-transform active:scale-[0.99]"
           >
-            <div className="flex flex-col gap-2">
-              <div className="text-lg font-semibold text-foreground">{project.name}</div>
-              <div className="text-sm text-muted-foreground">{project.repoUrl}</div>
-              <div className="text-sm text-muted-foreground">
-                New {project.countsByState.New} · Ready {project.countsByState.Ready} · In Progress{" "}
-                {project.countsByState["In Progress"]} · Done {project.countsByState.Done}
-              </div>
-            </div>
+            <Card className="border-border bg-surface/30 hover:bg-surface/50 transition-all">
+              <CardContent className="flex items-center justify-between p-6">
+                <div className="flex flex-col gap-1.5">
+                  <div className="text-lg font-semibold tracking-tight text-foreground group-hover:text-accent transition-colors">
+                    {project.name}
+                  </div>
+                  <div className="text-sm font-medium text-muted-foreground font-mono opacity-80">
+                    {project.repoUrl}
+                  </div>
+                </div>
+                <div className="flex gap-2">
+                  <Badge variant="muted" className="bg-background/50">
+                    {project.countsByState.New +
+                      project.countsByState.Ready +
+                      project.countsByState["In Progress"] +
+                      project.countsByState.Done}{" "}
+                    cards
+                  </Badge>
+                  <div className="text-xs font-medium text-muted-foreground uppercase tracking-widest hidden md:block">
+                    New {project.countsByState.New} · Ready {project.countsByState.Ready} · In
+                    Progress {project.countsByState["In Progress"]} · Done {project.countsByState.Done}
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
           </Link>
         ))}
       </section>

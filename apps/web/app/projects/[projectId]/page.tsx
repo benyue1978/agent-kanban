@@ -3,6 +3,8 @@ import { notFound } from "next/navigation";
 import { BoardColumn } from "@/components/board-column";
 import { PollingRefresher } from "@/components/polling-refresher";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
 import { fetchBoard, fetchProjects } from "@/lib/api";
 import { getHumanActorId } from "@/lib/config";
 import { resolveProjectRef } from "@/lib/projects";
@@ -45,19 +47,26 @@ export default async function ProjectBoardPage({
             The board is the live process surface. Cards keep markdown and timeline context, while the backend remains the only workflow authority.
           </p>
         </div>
-        <div className="flex flex-col gap-3 rounded-[1.6rem] border border-border/60 bg-white/60 px-4 py-4 text-sm leading-6 text-muted-foreground shadow-[0_20px_60px_-38px_rgba(15,23,42,0.45)] backdrop-blur-xl">
-          <div>Server-rendered from the API with no client-side workflow duplication.</div>
-          {humanActorId === null ? (
-            <div>Set `KANBAN_HUMAN_ACTOR_ID` to enable the human inbox.</div>
-          ) : (
-            <Link
-              href="/inbox"
-              className="inline-flex items-center rounded-full border border-border/70 bg-white/80 px-4 py-2 font-medium text-foreground transition hover:bg-white"
-            >
-              Open {humanActorId} inbox
-            </Link>
-          )}
-        </div>
+        <Card className="max-w-sm border-border bg-surface/50 backdrop-blur-xl">
+          <CardContent className="flex flex-col gap-4 p-5">
+            <div className="flex items-start gap-3 text-sm leading-relaxed text-muted-foreground">
+              <div className="mt-1 size-1.5 rounded-full bg-accent shrink-0" />
+              <p>Server-rendered from the API with no client-side workflow duplication.</p>
+            </div>
+            {humanActorId === null ? (
+              <div className="text-xs font-medium text-accent uppercase tracking-wider">
+                Set `KANBAN_HUMAN_ACTOR_ID` to enable inbox.
+              </div>
+            ) : (
+              <Link
+                href="/inbox"
+                className="inline-flex h-8 w-full items-center justify-start rounded-md border border-border/40 bg-secondary px-3 text-xs font-medium text-secondary-foreground transition hover:bg-secondary/80 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-accent/60"
+              >
+                Open {humanActorId} inbox
+              </Link>
+            )}
+          </CardContent>
+        </Card>
       </section>
 
       <section className="grid gap-4 xl:grid-cols-4">
