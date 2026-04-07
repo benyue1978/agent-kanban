@@ -111,6 +111,7 @@ export async function readProjectPolicyFile(path: string | undefined): Promise<P
 
 const stateSlugMap = {
   done: CardState.Done,
+  "in-review": CardState.InReview,
   "in-progress": CardState.InProgress,
   new: CardState.New,
   ready: CardState.Ready,

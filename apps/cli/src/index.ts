@@ -196,7 +196,7 @@ cards
   .command("list")
   .description("List cards")
   .option("--project <id>", "Project ID (inferred from git origin if omitted)")
-  .option("--state <new|ready|in-progress|done>", "Filter by state")
+  .option("--state <new|ready|in-progress|in-review|done>", "Filter by state")
   .option("--assigned-to <id|me>", "Filter by assigned owner")
   .action(async (options) => {
     await executeCommand(runListCommand, options);

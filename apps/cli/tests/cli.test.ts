@@ -398,6 +398,63 @@ describe("cli", () => {
     expect(JSON.parse(result.stdout).card.state).toBe("In Progress");
   });
 
+  it("maps in-review state slug to the API contract value", async () => {
+    server.removeAllListeners("request");
+    server.on("request", (request, response) => {
+      if (request.url === "/cards/card-1" && request.method === "GET") {
+        response.writeHead(200, { "content-type": "application/json" });
+        response.end(
+          JSON.stringify({
+            card: {
+              id: "card-1",
+              projectId: "project-1",
+              title: "Review Test",
+              state: "In Progress",
+              revision: 1,
+            },
+          })
+        );
+        return;
+      }
+
+      if (request.url === "/cards/card-1/set-state" && request.method === "POST") {
+        let body = "";
+        request.on("data", (chunk) => {
+          body += String(chunk);
+        });
+        request.on("end", () => {
+          const payload = JSON.parse(body) as { to: string };
+          response.writeHead(200, { "content-type": "application/json" });
+          response.end(
+            JSON.stringify({
+              card: {
+                id: "card-1",
+                projectId: "project-1",
+                title: "Review Test",
+                state: payload.to,
+                revision: 2,
+              },
+            })
+          );
+        });
+        return;
+      }
+
+      response.writeHead(500, { "content-type": "application/json" });
+      response.end(JSON.stringify({ error: { code: "unexpected", message: "unexpected" } }));
+    });
+
+    const result = await runCli(
+      ["cards", "set-state", "--id", "card-1", "--to", "in-review", "--json"],
+      {
+        KANBAN_API_URL: serverUrl,
+      }
+    );
+
+    expect(result.exitCode).toBe(0);
+    expect(JSON.parse(result.stdout).card.state).toBe("In Review");
+  });
+
   it("prints help for top-level and resource commands", async () => {
     const topLevel = await runCli(["--help"], {
       KANBAN_API_URL: serverUrl,
