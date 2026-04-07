@@ -39,18 +39,18 @@ export default async function InboxPage() {
             This slice keeps inbox behavior small and deterministic: mentions become inbox items, humans acknowledge them, then jump into the card to review or send work back.
           </p>
         </div>
-        <Card className="border-primary/15 bg-white/70">
+        <Card className="border-border bg-surface/50 backdrop-blur-xl">
           <CardContent className="flex h-full flex-col justify-between gap-6 p-6">
             <div className="space-y-2">
-              <div className="text-[11px] font-medium uppercase tracking-[0.28em] text-primary">
+              <div className="text-[10px] font-semibold uppercase tracking-[0.15em] text-accent">
                 Current Human Actor
               </div>
-              <div data-testid="current-human-actor" className="font-mono text-lg text-foreground">
+              <div data-testid="current-human-actor" className="font-mono text-xl text-foreground">
                 {humanActorId}
               </div>
             </div>
-            <div className="text-sm leading-6 text-muted-foreground">
-              {items.length} mention{items.length === 1 ? "" : "s"} in queue.
+            <div className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+              {items.length} mention{items.length === 1 ? "" : "s"} in queue
             </div>
           </CardContent>
         </Card>

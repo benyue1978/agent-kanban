@@ -56,21 +56,21 @@
 .dark {
   --background: #08090a;
   --foreground: #f7f8f8;
-  --surface: rgba(255, 255, 255, 0.02);
-  --border: rgba(255, 255, 255, 0.08);
+  --surface: rgba(255, 255, 255, 0.035);
+  --border: rgba(255, 255, 255, 0.1);
   --accent: #5e6ad2;
-  --accent-foreground: #f7f8f8;
+  --accent-foreground: #ffffff;
 
-  --card: var(--surface);
-  --card-foreground: var(--foreground);
+  --card: #0f1011;
+  --card-foreground: #f7f8f8;
   --popover: #0c0d0e;
-  --popover-foreground: var(--foreground);
+  --popover-foreground: #f7f8f8;
   --primary: var(--accent);
-  --primary-foreground: var(--accent-foreground);
-  --secondary: rgba(255, 255, 255, 0.02);
+  --primary-foreground: #ffffff;
+  --secondary: rgba(255, 255, 255, 0.05);
   --secondary-foreground: #f7f8f8;
-  --muted: rgba(255, 255, 255, 0.02);
-  --muted-foreground: #94a3b8;
+  --muted: rgba(255, 255, 255, 0.03);
+  --muted-foreground: #9ca3af;
   --input: var(--border);
   --ring: var(--accent);
 }
