@@ -39,6 +39,7 @@ export class ProjectRepository {
         [CardState.New]: 0,
         [CardState.Ready]: 0,
         [CardState.InProgress]: 0,
+        [CardState.InReview]: 0,
         [CardState.Done]: 0,
       };
 
