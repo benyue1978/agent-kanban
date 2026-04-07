@@ -32,26 +32,30 @@ export default function RootLayout({
       <body className={cn(sans.variable, mono.variable, "antialiased")}>
         <ThemeProvider>
           <div className="relative min-h-screen">
-            <header className="sticky top-0 z-20 border-b border-border/60 bg-background/70 backdrop-blur-xl">
-              <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-4 md:px-8">
-                <div className="flex flex-col">
-                  <span className="font-mono text-[11px] uppercase tracking-[0.28em] text-primary">
+            <header className="sticky top-0 z-20 border-b border-border bg-white/70 backdrop-blur-xl dark:bg-black/70">
+              <div className="mx-auto flex max-w-[1200px] items-center justify-between gap-4 px-4 py-4 md:px-8">
+                <Link href="/" className="flex flex-col">
+                  <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-primary">
                     Local First Workflow
                   </span>
-                  <span className="text-lg font-semibold tracking-[-0.03em] text-foreground">
+                  <span className="text-lg font-semibold tracking-[-0.02em] text-foreground">
                     agent-kanban
                   </span>
-                </div>
-                <nav className="flex items-center gap-3 text-sm text-muted-foreground">
+                </Link>
+                <nav className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
                   <Link
                     href="/inbox"
-                    className="hidden rounded-full border border-transparent px-3 py-2 transition hover:border-border/60 hover:bg-white/10 hover:text-foreground md:flex"
+                    className="hidden px-3 py-1.5 rounded-md hover:bg-surface border border-transparent hover:border-border transition-all hover:text-foreground md:flex"
                   >
                     Inbox
                   </Link>
-                  <span className="hidden rounded-full border border-border/60 bg-white/10 px-3 py-2 font-mono text-[11px] uppercase tracking-[0.22em] text-foreground md:flex">
-                    Human Actor
-                  </span>
+                  <Link
+                    href="/cards"
+                    className="hidden px-3 py-1.5 rounded-md hover:bg-surface border border-transparent hover:border-border transition-all hover:text-foreground md:flex"
+                  >
+                    Board
+                  </Link>
+                  <div className="h-4 w-[1px] bg-border mx-1 hidden md:block" />
                   <ThemeToggle />
                 </nav>
               </div>
