@@ -17,11 +17,11 @@ export function CardTile({ card }: { card: CardListItem }) {
     <Link href={`/cards/${card.id}`} className="group block">
       <Card
         className={cn(
-          "transition duration-200 hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-[0_22px_70px_-28px_rgba(180,83,9,0.42)]",
-          card.state === "Done" && "bg-card/80"
+          "transition-all duration-200 shadow-none border-border bg-surface/50 hover:bg-surface backdrop-blur-none",
+          card.state === "Done" && "opacity-80"
         )}
       >
-        <CardContent className="flex flex-col gap-4 p-5">
+        <CardContent className="flex flex-col gap-4 p-4">
           <div className="flex items-start justify-between gap-3">
             <div className="flex flex-col gap-2">
               <div className="flex items-center gap-2 text-[11px] font-medium uppercase tracking-[0.22em] text-muted-foreground">
