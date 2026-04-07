@@ -236,6 +236,7 @@ cards
   .requiredOption("--id <card-id>", "Card ID")
   .requiredOption("--to <new|ready|in-progress|done>", "Target state")
   .option("--owner <owner-id>", "Set owner during state transition")
+  .option("--actor <id>", "Actor ID (overrides default)")
   .option("--revision <n>", "Current card revision (fetched if omitted)")
   .action(async (options) => {
     await executeCommand(runSetStateCommand, options);
