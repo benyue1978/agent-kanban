@@ -95,7 +95,7 @@ describe("workflow", () => {
     ).not.toThrow();
   });
 
-  it("requires summary before In Progress to Done", () => {
+  it("rejects In Progress to Done (enforce In Review gate)", () => {
     expect(
       getErrorCode(() =>
         canTransition({
@@ -104,7 +104,60 @@ describe("workflow", () => {
           actorKind: "human",
           actorId: "human-1",
           ownerId: "human-1",
-          verificationPresent: true,
+          summaryPresent: true,
+          dodCheckPresent: true,
+          verificationEvidencePresent: true,
+        })
+      )
+    ).toBe("invalid_transition");
+  });
+
+  it("allows In Progress to In Review with an owner", () => {
+    expect(() =>
+      canTransition({
+        from: "In Progress",
+        to: "In Review",
+        actorKind: "human",
+        actorId: "human-1",
+        ownerId: "human-1",
+      })
+    ).not.toThrow();
+  });
+
+  it("rejects In Progress to In Review without an owner", () => {
+    expect(
+      getErrorCode(() =>
+        canTransition({
+          from: "In Progress",
+          to: "In Review",
+          actorKind: "human",
+          ownerId: null,
+        })
+      )
+    ).toBe("missing_owner");
+  });
+
+  it("allows In Review to In Progress for fixes", () => {
+    expect(() =>
+      canTransition({
+        from: "In Review",
+        to: "In Progress",
+        actorKind: "human",
+        actorId: "human-1",
+        ownerId: "human-1",
+      })
+    ).not.toThrow();
+  });
+
+  it("requires summary before In Review to Done", () => {
+    expect(
+      getErrorCode(() =>
+        canTransition({
+          from: "In Review",
+          to: "Done",
+          actorKind: "human",
+          actorId: "human-1",
+          ownerId: "human-1",
           summaryPresent: false,
         })
       )
@@ -115,7 +168,7 @@ describe("workflow", () => {
     expect(
       getErrorCode(() =>
         canTransition({
-          from: "In Progress",
+          from: "In Review",
           to: "Done",
           actorKind: "human",
           actorId: "human-1",
@@ -132,7 +185,7 @@ describe("workflow", () => {
     expect(
       getErrorCode(() =>
         canTransition({
-          from: "In Progress",
+          from: "In Review",
           to: "Done",
           actorKind: "human",
           actorId: "human-1",
@@ -149,7 +202,7 @@ describe("workflow", () => {
     expect(
       getErrorCode(() =>
         canTransition({
-          from: "In Progress",
+          from: "In Review",
           to: "Done",
           actorKind: "human",
           ownerId: null,
@@ -161,10 +214,10 @@ describe("workflow", () => {
     ).toBe("missing_owner");
   });
 
-  it("allows valid completion from In Progress to Done", () => {
+  it("allows valid completion from In Review to Done", () => {
     expect(() =>
       canTransition({
-        from: "In Progress",
+        from: "In Review",
         to: "Done",
         actorKind: "agent",
         actorId: "agent-1",

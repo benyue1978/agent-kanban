@@ -26,7 +26,9 @@ export interface WorkflowTransitionInput {
 const allowedTransitions = new Set<string>([
   `${CardState.New}=>${CardState.Ready}`,
   `${CardState.Ready}=>${CardState.InProgress}`,
-  `${CardState.InProgress}=>${CardState.Done}`,
+  `${CardState.InProgress}=>${CardState.InReview}`,
+  `${CardState.InReview}=>${CardState.InProgress}`,
+  `${CardState.InReview}=>${CardState.Done}`,
 ]);
 
 function throwWorkflowError(
@@ -39,6 +41,38 @@ function throwWorkflowError(
 
 function resolvePolicy(policy?: ProjectPolicy): ProjectPolicy {
   return policy ?? defaultProjectPolicy;
+}
+
+function validateDoneTransition(input: WorkflowTransitionInput) {
+  if (input.ownerId === null || input.ownerId === undefined) {
+    throwWorkflowError("missing_owner", "an owner is required before a card can be completed", {
+      from: input.from,
+      to: input.to,
+    });
+  }
+
+  if (input.summaryPresent !== true) {
+    throwWorkflowError("summary_required", "a final summary is required before a card can be completed", {
+      from: input.from,
+      to: input.to,
+    });
+  }
+
+  if (input.dodCheckPresent !== true) {
+    throwWorkflowError(
+      "missing_required_section",
+      "a Definition of Done check is required in the final summary before completion",
+      { from: input.from, to: input.to }
+    );
+  }
+
+  if (input.verificationEvidencePresent !== true) {
+    throwWorkflowError(
+      "missing_required_section",
+      "verification evidence is required before a card can be completed",
+      { from: input.from, to: input.to }
+    );
+  }
 }
 
 export function canTransition(input: WorkflowTransitionInput): void {
@@ -99,37 +133,31 @@ export function canTransition(input: WorkflowTransitionInput): void {
     return;
   }
 
-  if (input.from === CardState.InProgress && input.to === CardState.Done) {
+  if (input.from === CardState.InProgress && input.to === CardState.InReview) {
+    // Basic validation for moving to review
     if (input.ownerId === null || input.ownerId === undefined) {
-      throwWorkflowError(
-        "missing_owner",
-        "an owner is required before a card can be completed",
-        { from: input.from, to: input.to }
-      );
+      throwWorkflowError("missing_owner", "an owner is required before a card can be reviewed", {
+        from: input.from,
+        to: input.to,
+      });
     }
+    return;
+  }
 
-    if (input.summaryPresent !== true) {
-      throwWorkflowError(
-        "summary_required",
-        "a final summary is required before a card can be completed",
-        { from: input.from, to: input.to }
-      );
-    }
+  if (input.from === CardState.InReview && input.to === CardState.Done) {
+    // Reuse existing Done validation, ensuring it comes from InReview
+    validateDoneTransition(input);
+    return;
+  }
 
-    if (input.dodCheckPresent !== true) {
-      throwWorkflowError(
-        "missing_required_section",
-        "a Definition of Done check is required in the final summary before completion",
-        { from: input.from, to: input.to }
-      );
+  if (input.from === CardState.InReview && input.to === CardState.InProgress) {
+    // Basic validation for moving back for fixes
+    if (input.ownerId === null || input.ownerId === undefined) {
+      throwWorkflowError("missing_owner", "an owner is required before a card can be moved back for fixes", {
+        from: input.from,
+        to: input.to,
+      });
     }
-
-    if (input.verificationEvidencePresent !== true) {
-      throwWorkflowError(
-        "missing_required_section",
-        "verification evidence is required before a card can be completed",
-        { from: input.from, to: input.to }
-      );
-    }
+    return;
   }
 }
