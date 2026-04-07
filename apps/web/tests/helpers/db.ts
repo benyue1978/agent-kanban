@@ -33,7 +33,7 @@ export function seedReviewUiFixture(): void {
     INSERT INTO "collaborators" ("id", "kind", "display_name", "created_at")
     VALUES
       ('agent-main', 'agent', 'Codex Main', NOW()),
-      ('human-reviewer', 'human', 'Reviewer', NOW()),
+      ('human', 'human', 'Reviewer', NOW()),
       ('human-song', 'human', 'Song', NOW());
 
     INSERT INTO "cards" (
@@ -115,7 +115,7 @@ Add verification evidence and complete.
       'card-review',
       'agent-main',
       'question',
-      '@human-reviewer please verify this card.',
+      '@human please verify this card.',
       NOW()
     );
 
@@ -128,7 +128,7 @@ Add verification evidence and complete.
     )
     VALUES (
       'comment-mention',
-      'human-reviewer',
+      'human',
       'open',
       NOW(),
       NOW()

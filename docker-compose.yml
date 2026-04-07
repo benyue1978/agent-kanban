@@ -39,7 +39,7 @@ services:
         condition: service_started
     environment:
       KANBAN_API_URL: http://api:3000
-      KANBAN_HUMAN_ACTOR_ID: human-reviewer
+      KANBAN_HUMAN_ACTOR_ID: human
     ports:
       - "${WEB_PORT:-3000}:3000"
 

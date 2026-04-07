@@ -73,7 +73,7 @@ export function canTransition(input: WorkflowTransitionInput): void {
     if (input.actorKind === "agent" && input.humanInstructionGranted !== true) {
       throwWorkflowError(
         "forbidden_action",
-        "agents may only move cards to Ready under explicit human instruction",
+        "agents may only move cards to Ready under explicit human instruction, try again with `--actor human` flag",
         { from: input.from, to: input.to }
       );
     }

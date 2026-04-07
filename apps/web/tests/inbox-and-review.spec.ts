@@ -19,7 +19,7 @@ test("human can add verification evidence and complete a card from the browser",
 
 test("human inbox, readying, and completion actions work end to end", async ({ page }) => {
   await page.goto("/inbox");
-  await expect(page.getByTestId("current-human-actor")).toHaveText("human-reviewer");
+  await expect(page.getByTestId("current-human-actor")).toHaveText("human");
   await expect(page.getByTestId("inbox-status-badge")).toHaveText("open");
   await page.getByRole("button", { name: "Acknowledge" }).click();
   await expect(page.getByTestId("inbox-status-badge")).toHaveText("acknowledged");

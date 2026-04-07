@@ -36,7 +36,7 @@ async function seedCommentFixture(client: PrismaClient): Promise<void> {
         displayName: "Song",
       },
       {
-        id: "human-reviewer",
+        id: "human",
         kind: "human",
         displayName: "Reviewer",
       },
@@ -198,7 +198,7 @@ Commit: abc1234
       method: "POST",
       url: "/cards/card-comment-inbox-1/comments",
       payload: {
-        authorId: "human-reviewer",
+        authorId: "human",
         kind: "verification",
         body: "Verified summary and inbox behavior.",
       },
@@ -209,7 +209,7 @@ Commit: abc1234
       method: "POST",
       url: "/cards/card-comment-inbox-1/comments",
       payload: {
-        authorId: "human-reviewer",
+        authorId: "human",
         kind: "decision",
         body: "Looks good to me.",
       },
@@ -220,7 +220,7 @@ Commit: abc1234
       method: "POST",
       url: "/cards/card-comment-inbox-1/set-state",
       payload: {
-        actorId: "human-reviewer",
+        actorId: "human",
         revision: summaryResponse.json().card.revision,
         to: "Done",
       },

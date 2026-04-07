@@ -33,7 +33,7 @@ export default defineConfig({
       cwd: webCwd,
       env: {
         KANBAN_API_URL: `http://127.0.0.1:${apiPort}`,
-        KANBAN_HUMAN_ACTOR_ID: "human-reviewer",
+        KANBAN_HUMAN_ACTOR_ID: "human",
         PORT: webPort,
       },
       port: Number(webPort),
