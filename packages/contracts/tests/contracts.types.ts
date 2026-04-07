@@ -135,6 +135,10 @@ const validBoardColumns: BoardColumns = {
     state: CardState.InProgress,
     cards: [],
   },
+  [CardState.InReview]: {
+    state: CardState.InReview,
+    cards: [],
+  },
   [CardState.Done]: {
     state: CardState.Done,
     cards: [],

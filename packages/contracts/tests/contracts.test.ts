@@ -220,6 +220,10 @@ describe("contracts", () => {
           state: CardState.InProgress,
           cards: [],
         },
+        [CardState.InReview]: {
+          state: CardState.InReview,
+          cards: [],
+        },
         [CardState.Done]: {
           state: CardState.Done,
           cards: [],
@@ -259,6 +263,7 @@ describe("contracts", () => {
             [CardState.New]: 1,
             [CardState.Ready]: 0,
             [CardState.InProgress]: 0,
+            [CardState.InReview]: 0,
             [CardState.Done]: 0,
           },
         },

@@ -3,5 +3,5 @@
   "compilerOptions": {
     "noEmit": true
   },
-  "include": ["src", "tests/contracts.types.ts"]
+  "include": ["src", "tests/contracts.types.ts", "tests/workflow-v2.types.ts"]
 }

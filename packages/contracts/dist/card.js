@@ -2,6 +2,7 @@ export const CardState = {
     New: "New",
     Ready: "Ready",
     InProgress: "In Progress",
+    InReview: "In Review",
     Done: "Done",
 };
 export const CommentKind = {

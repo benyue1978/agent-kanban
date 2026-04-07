@@ -5,6 +5,7 @@ export const CardState = {
   New: "New",
   Ready: "Ready",
   InProgress: "In Progress",
+  InReview: "In Review",
   Done: "Done",
 } as const;
 
@@ -87,6 +88,12 @@ interface CardReadInProgress extends CardReadBase {
   summaryMd: string | null;
 }
 
+interface CardReadInReview extends CardReadBase {
+  state: typeof CardState.InReview;
+  owner: ActorRef;
+  summaryMd: string | null;
+}
+
 interface CardReadDone extends CardReadBase {
   state: typeof CardState.Done;
   owner: ActorRef | null;
@@ -97,6 +104,7 @@ export type CardListItem =
   | CardReadNew
   | CardReadReady
   | CardReadInProgress
+  | CardReadInReview
   | CardReadDone;
 
 export type CardDetail = CardListItem & {
@@ -106,6 +114,7 @@ export type CardDetail = CardListItem & {
 
 export type SummaryPresentCard =
   | (Extract<CardDetail, { state: typeof CardState.InProgress }> & { summaryMd: string })
+  | (Extract<CardDetail, { state: typeof CardState.InReview }> & { summaryMd: string })
   | Extract<CardDetail, { state: typeof CardState.Done }>;
 
 export type ClaimedCardDetail = Extract<CardDetail, { state: typeof CardState.InProgress }>;
