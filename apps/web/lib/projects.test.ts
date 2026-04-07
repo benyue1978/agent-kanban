@@ -11,6 +11,7 @@ const projects: ProjectListItem[] = [
       New: 0,
       Ready: 1,
       "In Progress": 0,
+      "In Review": 0,
       Done: 0,
     },
   },
@@ -22,6 +23,7 @@ const projects: ProjectListItem[] = [
       New: 0,
       Ready: 0,
       "In Progress": 0,
+      "In Review": 0,
       Done: 0,
     },
   },
@@ -41,6 +43,8 @@ describe("project routing helpers", () => {
   });
 
   it("builds project links from the project name", () => {
-    expect(buildProjectHref(projects[0])).toBe("/projects/agent-kanban");
+    const project = projects[0];
+    if (!project) throw new Error("Missing project");
+    expect(buildProjectHref(project)).toBe("/projects/agent-kanban");
   });
 });

@@ -107,6 +107,27 @@ Add verification evidence and complete.
         2,
         NOW(),
         NOW()
+      ),
+      (
+        'card-in-review',
+        'project-ui',
+        'Review-ready implementation',
+        '# Review-ready implementation
+
+## Goal
+Verify and complete the delivered work.
+
+## Scope
+Reviewing the implementation.
+
+## Definition of Done
+- [x] code reviewed',
+        4,
+        'In Review',
+        'agent-main',
+        2,
+        NOW(),
+        NOW()
       );
 
     INSERT INTO "comments" ("id", "card_id", "author_id", "kind", "body_md", "created_at")

@@ -47,12 +47,13 @@ export default async function HomePage() {
                     {project.countsByState.New +
                       project.countsByState.Ready +
                       project.countsByState["In Progress"] +
+                      project.countsByState["In Review"] +
                       project.countsByState.Done}{" "}
                     cards
                   </Badge>
                   <div className="text-xs font-medium text-muted-foreground uppercase tracking-widest hidden md:block">
                     New {project.countsByState.New} · Ready {project.countsByState.Ready} · In
-                    Progress {project.countsByState["In Progress"]} · Done {project.countsByState.Done}
+                    Progress {project.countsByState["In Progress"]} · In Review {project.countsByState["In Review"]} · Done {project.countsByState.Done}
                   </div>
                 </div>
               </CardContent>

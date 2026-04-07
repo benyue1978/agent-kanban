@@ -15,6 +15,7 @@ const columnDescriptions = {
   New: "Freshly created cards before they are shaped into reviewable work.",
   Ready: "Queued work that can be pulled once scope and DoD are clear.",
   "In Progress": "Execution lanes owned by the current collaborator, including verification and summary work.",
+  "In Review": "Cards awaiting peer review or approval.",
   Done: "Completed cards with final summaries attached.",
 };
 
@@ -69,7 +70,7 @@ export default async function ProjectBoardPage({
         </Card>
       </section>
 
-      <section className="grid gap-4 xl:grid-cols-4">
+      <section className="grid gap-4 xl:grid-cols-5">
         <BoardColumn
           state="New"
           description={columnDescriptions.New}
@@ -84,6 +85,11 @@ export default async function ProjectBoardPage({
           state="In Progress"
           description={columnDescriptions["In Progress"]}
           cards={board.columns["In Progress"].cards}
+        />
+        <BoardColumn
+          state="In Review"
+          description={columnDescriptions["In Review"]}
+          cards={board.columns["In Review"].cards}
         />
         <BoardColumn
           state="Done"
