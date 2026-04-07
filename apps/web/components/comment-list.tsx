@@ -19,7 +19,7 @@ export function CommentList({ comments }: { comments: CommentRecord[] }) {
               <div className="flex flex-wrap items-center gap-2">
                 <Badge>{comment.kind}</Badge>
                 <Badge variant="outline">{comment.authorId}</Badge>
-                <Badge variant="muted">{new Date(comment.createdAt).toLocaleString()}</Badge>
+                <Badge variant="muted" suppressHydrationWarning>{new Date(comment.createdAt).toLocaleString()}</Badge>
               </div>
               <div className="flex items-start gap-3 text-sm leading-7 text-foreground">
                 <MessageSquareQuote className="mt-1 size-4 text-primary" />

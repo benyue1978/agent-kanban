@@ -47,7 +47,7 @@ export function CardDetail({
             </div>
             <div className="flex flex-col gap-2">
               <CardTitle className="text-3xl md:text-4xl">{card.title}</CardTitle>
-              <CardDescription>
+              <CardDescription suppressHydrationWarning>
                 Revision {card.revision} updated {new Date(card.updatedAt).toLocaleString()}
               </CardDescription>
             </div>

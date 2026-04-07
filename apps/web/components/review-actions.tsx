@@ -66,15 +66,19 @@ function ConfiguredReviewActions({
     card.priority === null ? "" : String(card.priority)
   );
 
+  const isBusy = pendingAction !== null || isRefreshing;
+
   useEffect(() => {
     setPriorityValue(card.priority === null ? "" : String(card.priority));
   }, [card.priority]);
 
   useEffect(() => {
-    setOptimisticState(card.state);
-  }, [card.state]);
+    // Only sync back to server state when we are not busy
+    if (!isBusy) {
+      setOptimisticState(card.state);
+    }
+  }, [card.state, isBusy]);
 
-  const isBusy = pendingAction !== null || isRefreshing;
   const [commentKind, setCommentKind] = useState<CommentKindValue>(
     optimisticState === CardState.InProgress ? CommentKind.Verification : CommentKind.Note
   );
@@ -91,24 +95,30 @@ function ConfiguredReviewActions({
     setPendingAction(action);
     setError(null);
 
-    const response = await request();
+    try {
+      const response = await request();
 
-    if (!response.ok) {
-      setError(await getErrorMessage(response));
+      if (!response.ok) {
+        setError(await getErrorMessage(response));
+        setPendingAction(null);
+        return;
+      }
+
+      onSuccess?.();
+      
+      startRefresh(() => {
+        router.refresh();
+        setPendingAction(null);
+      });
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "An unexpected error occurred");
       setPendingAction(null);
-      return;
     }
-
-    onSuccess?.();
-    setPendingAction(null);
-    startRefresh(() => {
-      router.refresh();
-    });
   }
 
   return (
-    <Card className="overflow-hidden border-primary/15 bg-[linear-gradient(180deg,color-mix(in_oklab,var(--card)_88%,white)_0%,color-mix(in_oklab,var(--card)_94%,transparent)_100%)]">
-      <CardHeader className="gap-4 border-b border-border/70 bg-gradient-to-br from-primary/10 via-transparent to-accent/15">
+    <Card className="overflow-hidden border-border bg-surface">
+      <CardHeader className="gap-4 border-b border-border bg-gradient-to-br from-primary/10 via-transparent to-accent/15">
         <div className="flex items-center gap-2 text-[11px] font-medium uppercase tracking-[0.28em] text-primary">
           <ShieldCheck className="size-4" />
           Human Card Controls
@@ -132,7 +142,7 @@ function ConfiguredReviewActions({
             <select
               id="card-priority"
               aria-label="Priority"
-              className="h-11 w-full rounded-[1rem] border border-border/70 bg-white/80 px-4 text-sm text-foreground outline-none transition focus:border-primary/60 focus:ring-2 focus:ring-ring/30"
+              className="h-9 w-full rounded-md border border-border bg-secondary px-3 text-sm text-foreground outline-none transition focus:border-accent/60 focus:ring-1 focus:ring-accent/30"
               disabled={isBusy}
               value={priorityValue}
               onChange={(event) => {
@@ -142,7 +152,7 @@ function ConfiguredReviewActions({
                   return await fetch(`/api/cards/${card.id}/priority`, {
                     method: "POST",
                     headers: {
-                      "content-type": "application/json",
+                      "Content-Type": "application/json",
                     },
                     body: JSON.stringify({
                       priority: nextValue === "" ? null : Number(nextValue),
@@ -164,12 +174,13 @@ function ConfiguredReviewActions({
             {optimisticState === CardState.New ? (
               <Button
                 disabled={isBusy}
+                data-testid="move-to-ready-button"
                 onClick={() => {
                   void runAction("move-ready", async () => {
                     return await fetch(`/api/cards/${card.id}/state`, {
                       method: "POST",
                       headers: {
-                        "content-type": "application/json",
+                        "Content-Type": "application/json",
                       },
                       body: JSON.stringify({
                         revision: card.revision,
@@ -181,6 +192,7 @@ function ConfiguredReviewActions({
                   });
                 }}
               >
+                {pendingAction === "move-ready" ? <LoaderCircle className="size-4 animate-spin" /> : null}
                 Move To Ready
               </Button>
             ) : null}
@@ -188,12 +200,13 @@ function ConfiguredReviewActions({
             {optimisticState === CardState.Ready ? (
               <Button
                 disabled={isBusy}
+                data-testid="start-work-button"
                 onClick={() => {
                   void runAction("start-work", async () => {
                     return await fetch(`/api/cards/${card.id}/state`, {
                       method: "POST",
                       headers: {
-                        "content-type": "application/json",
+                        "Content-Type": "application/json",
                       },
                       body: JSON.stringify({
                         ownerId: humanActorId,
@@ -206,6 +219,7 @@ function ConfiguredReviewActions({
                   });
                 }}
               >
+                {pendingAction === "start-work" ? <LoaderCircle className="size-4 animate-spin" /> : null}
                 Start Work
               </Button>
             ) : null}
@@ -214,12 +228,13 @@ function ConfiguredReviewActions({
               <>
                 <Button
                   disabled={isBusy}
+                  data-testid="mark-done-button"
                   onClick={() => {
                     void runAction("mark-done", async () => {
                       return await fetch(`/api/cards/${card.id}/state`, {
                         method: "POST",
                         headers: {
-                          "content-type": "application/json",
+                          "Content-Type": "application/json",
                         },
                         body: JSON.stringify({
                           revision: card.revision,
@@ -231,7 +246,11 @@ function ConfiguredReviewActions({
                     });
                   }}
                 >
-                  <Zap className="size-4" />
+                  {pendingAction === "mark-done" ? (
+                    <LoaderCircle className="size-4 animate-spin" />
+                  ) : (
+                    <Zap className="size-4" />
+                  )}
                   Mark Done
                 </Button>
               </>
@@ -249,7 +268,7 @@ function ConfiguredReviewActions({
           <textarea
             id="card-comment"
             aria-label="Comment"
-            className="min-h-28 w-full rounded-[1.4rem] border border-border/70 bg-white/80 px-4 py-3 text-sm leading-6 text-foreground outline-none transition focus:border-primary/60 focus:ring-2 focus:ring-ring/30"
+            className="min-h-28 w-full rounded-md border border-border bg-secondary px-4 py-3 text-sm leading-6 text-foreground outline-none transition focus:border-accent/60 focus:ring-1 focus:ring-accent/30"
             disabled={isBusy}
             placeholder="Leave rationale, a send-back note, or a mention."
             value={comment}
@@ -270,7 +289,7 @@ function ConfiguredReviewActions({
             <select
               id="card-comment-kind"
               aria-label="Comment kind"
-              className="h-11 w-full rounded-[1rem] border border-border/70 bg-white/80 px-4 text-sm text-foreground outline-none transition focus:border-primary/60 focus:ring-2 focus:ring-ring/30"
+              className="h-9 w-full rounded-md border border-border bg-secondary px-3 text-sm text-foreground outline-none transition focus:border-accent/60 focus:ring-1 focus:ring-accent/30"
               disabled={isBusy}
               value={commentKind}
               onChange={(event) => {
@@ -293,6 +312,7 @@ function ConfiguredReviewActions({
           <Button
             variant="secondary"
             disabled={isBusy || comment.trim().length === 0}
+            data-testid="add-comment-button"
             onClick={() => {
               void runAction(
                 "comment",
@@ -300,7 +320,7 @@ function ConfiguredReviewActions({
                   return await fetch(`/api/cards/${card.id}/comments`, {
                     method: "POST",
                     headers: {
-                      "content-type": "application/json",
+                      "Content-Type": "application/json",
                     },
                     body: JSON.stringify({
                       body: comment.trim(),
@@ -314,7 +334,7 @@ function ConfiguredReviewActions({
               );
             }}
           >
-            {isBusy && pendingAction !== null ? (
+            {pendingAction === "comment" ? (
               <LoaderCircle className="size-4 animate-spin" />
             ) : (
               <MessageSquarePlus className="size-4" />
@@ -324,7 +344,7 @@ function ConfiguredReviewActions({
         </div>
 
         {error === null ? null : (
-          <div className="rounded-[1.2rem] border border-red-200 bg-red-50 px-4 py-3 text-sm leading-6 text-red-700">
+          <div className="rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm leading-6 text-red-700">
             {error}
           </div>
         )}

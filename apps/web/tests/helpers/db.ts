@@ -58,6 +58,9 @@ export function seedReviewUiFixture(): void {
 ## Goal
 Shape the card in browser.
 
+## Context
+Initial card creation and refinement.
+
 ## Scope
 Queue it for work.
 
@@ -79,6 +82,9 @@ Queue it for work.
 ## Goal
 Verify and complete the delivered work.
 
+## Context
+Validation of implementation details.
+
 ## Scope
 Add verification evidence and complete.
 
@@ -89,6 +95,9 @@ Add verification evidence and complete.
 
 ### What was done
 - Implemented the first browser workflow.
+
+### Result / Links
+- https://github.com/example/repo/commit/1234567
 
 ### DoD Check
 - [x] summary present',

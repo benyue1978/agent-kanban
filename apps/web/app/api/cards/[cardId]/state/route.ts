@@ -26,11 +26,13 @@ export async function POST(
     );
   }
 
-  const body = await readBody<{
-    ownerId?: string;
-    revision: number;
-    to: string;
-  }>(request);
+  let body: any;
+  try {
+    body = await request.json();
+  } catch (err) {
+    body = {};
+  }
+
   const response = await postApi(`/cards/${cardId}/set-state`, {
     ...body,
     actorId,

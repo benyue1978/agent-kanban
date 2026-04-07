@@ -6,6 +6,15 @@ Transform the current light-themed Web UI into a sophisticated, dark-mode-first,
 ## Context
 The existing UI uses a light-themed `oklch` color palette and `Manrope` typography with large border radii. This revamp will align the project's visual identity with its goal of being a "precision-engineered" tool for agents and humans. We will use `next-themes` for theme management and `Inter Variable` for typography.
 
+## Scope
+- **Global Styles**: Redesign `apps/web/app/globals.css` with the palette, typography rules, and 8px spacing system.
+- **Typography**: Integrate `Inter` via `next/font/google` and apply global `font-feature-settings: "cv01", "ss03"`.
+- **Component Overhaul**:
+  - Update `board-column.tsx`, `card-tile.tsx`, and `card-detail.tsx` with translucent surfaces and subtle borders.
+  - Implement the theme toggle and button variants in `review-actions.tsx`.
+- **Theme Management**: Install and configure `next-themes`.
+- **Verification**: Ensure all existing Playwright E2E tests continue to pass.
+
 ## Architecture & Dependencies
 - **Theme Management**: `next-themes` for handling `dark:` classes and `localStorage` persistence.
 - **Typography**: `Inter Variable` (via `next/font/google`) with global `font-feature-settings: "cv01", "ss03"`.

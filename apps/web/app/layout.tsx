@@ -28,7 +28,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang="en" suppressHydrationWarning data-scroll-behavior="smooth">
       <body className={cn(sans.variable, mono.variable, "antialiased")}>
         <ThemeProvider>
           <div className="relative min-h-screen">

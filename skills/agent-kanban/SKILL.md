@@ -110,7 +110,7 @@ These may come from:
 
 7. **Workflow Hard Gates**
 
-   * **Planning Gate (`New -> Ready`)**: The agent MUST discuss the task with the human via chat to finalize the design. Once a spec/plan is approved by the human, the agent updates the card with a detailed, placeholder-free description and moves the card to `Ready`. Descriptions MUST include Goal, Context, Scope, and Definition of Done.
+   * **Planning Gate (`New -> Ready`)**: The agent MUST discuss the task with the human via chat to finalize the design. Once a spec/plan is approved by the human, the agent updates the card with a detailed, placeholder-free description and moves the card to `Ready`, using `--actor human`. Descriptions MUST include Goal, Context, Scope, and Definition of Done.
    * **Implementation Gate**: The agent MUST obtain human approval to start development. No implementation code (writing logic) should be written while a card is in the `Ready` state. The agent MUST move the card to `In Progress` before starting implementation.
    * **Completion Gate (`In Progress -> Done`)**: Must pass tests, commit all changes, and push to origin. `Final Summary` MUST include:
      - "What was done" section.

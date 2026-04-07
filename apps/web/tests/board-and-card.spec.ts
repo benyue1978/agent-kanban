@@ -38,9 +38,10 @@ Render the board and card detail through the web app.
 });
 
 test("board and card detail render current process state", async ({ page }) => {
+  const projectName = `agent-kanban-${Date.now()}`;
   const projectResponse = await page.request.post(`${apiBaseUrl}/projects`, {
     data: {
-      name: "agent-kanban",
+      name: projectName,
       repoUrl: "https://example.com/repo.git",
     },
   });

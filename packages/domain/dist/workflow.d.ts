@@ -11,6 +11,7 @@ export interface WorkflowTransitionInput {
     humanInstructionGranted?: boolean;
     requiredSectionsPresent?: boolean;
     summaryPresent?: boolean;
+    dodCheckPresent?: boolean;
     verificationEvidencePresent?: boolean;
 }
 export declare function canTransition(input: WorkflowTransitionInput): void;

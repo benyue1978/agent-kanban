@@ -75,7 +75,7 @@ export function InboxList({
               <CardHeader className="gap-4 border-b border-border/60 bg-gradient-to-r from-white/70 to-primary/5">
                 <div className="flex flex-wrap items-center gap-2">
                   <Badge data-testid="inbox-status-badge">{item.status}</Badge>
-                  <Badge variant="muted">{new Date(item.createdAt).toLocaleString()}</Badge>
+                  <Badge variant="muted" suppressHydrationWarning>{new Date(item.createdAt).toLocaleString()}</Badge>
                 </div>
                 <CardTitle className="text-xl">
                   Mention on <span className="font-mono text-primary">{item.cardId}</span>

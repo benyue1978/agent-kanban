@@ -44,7 +44,7 @@
   --popover-foreground: var(--foreground);
   --primary: var(--accent);
   --primary-foreground: var(--accent-foreground);
-  --secondary: #edeff2;
+  --secondary: #f3f4f5;
   --secondary-foreground: #08090a;
   --muted: #edeff2;
   --muted-foreground: #64748b;
@@ -67,9 +67,9 @@
   --popover-foreground: var(--foreground);
   --primary: var(--accent);
   --primary-foreground: var(--accent-foreground);
-  --secondary: rgba(255, 255, 255, 0.04);
+  --secondary: rgba(255, 255, 255, 0.02);
   --secondary-foreground: #f7f8f8;
-  --muted: rgba(255, 255, 255, 0.04);
+  --muted: rgba(255, 255, 255, 0.02);
   --muted-foreground: #94a3b8;
   --input: var(--border);
   --ring: var(--accent);

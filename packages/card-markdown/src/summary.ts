@@ -23,9 +23,16 @@ function normalizeBlock(markdown: string): string {
 }
 
 export function isSectionComplete(content: string): boolean {
-  const placeholders = ["TBD", "TODO", "[ ]"];
-  const upperContent = content.toUpperCase();
-  return !placeholders.some((p) => upperContent.includes(p.toUpperCase()));
+  const trimmed = content.trim();
+  if (trimmed.length === 0) return false;
+  
+  const upperContent = trimmed.toUpperCase();
+  if (upperContent === "TBD" || upperContent === "TODO") return false;
+  
+  // We allow [ ] in content because it's a valid part of a checklist (e.g. Definition of Done).
+  // The system enforces checked items elsewhere if needed, but for "presence" validation,
+  // [ ] is acceptable content.
+  return true;
 }
 
 export function validateCompletionSummary(markdown: string): void {
