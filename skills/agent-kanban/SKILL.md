@@ -260,8 +260,7 @@ If a decision materially affects final understanding of the work, it should also
 ## 6. Workflow Behavior
 
 Cards move through:
-
-New → Ready → In Progress → Done
+New → Ready → In Progress → In Review → Done
 
 All cards, including historical backfills, MUST follow this sequence.
 
@@ -325,6 +324,21 @@ Common error types may include:
 #### On `cli_usage_error`
 
 - run `kanban discovery --json` to verify correct flags and command structure
+
+### Mandatory Review Step
+
+Once implementation and local testing are finished, the agent MUST follow this procedure:
+
+1. **Transition to Review**: Move the card to `In Review` state.
+   `kanban cards set-state --id <card-id> --to in-review --json`
+
+2. **Invoke Reviewer**: Spawn a specialized subagent (e.g., `codebase_investigator`) to audit the changes.
+   Prompt: "Review the recent changes in [path]. Check for correctness, security, and style."
+
+3. **Document Findings**: All issues found MUST be added as comments to the card.
+   `kanban cards comment --id <card-id> --body "Finding: ..." --kind note --author agent --json`
+
+4. **Iterate**: If fixes are needed, move back to `In Progress`, fix, and repeat.
 
 ## 9. Final Summary (Critical)
 
