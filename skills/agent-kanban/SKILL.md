@@ -264,13 +264,16 @@ New → Ready → In Progress → In Review → Done
 
 All cards, including historical backfills, MUST follow this sequence.
 
+**In Review is a mandatory review gate**: Before moving any card to `In Review`, the agent MUST have completed implementation. While in `In Review`, the agent MUST spawn a subagent to perform code review. The card cannot move to `Done` until review is complete.
+
 Important constraints:
 
 - do not move to In Progress without an owner
+- do not move to In Review without completed implementation
 - do not move to Done without Final Summary
 - do not move to Done without recorded verification evidence
 - do not assume comments alone are enough for completion
-- use CLI state slugs: `new`, `ready`, `in-progress`, `done`
+- use CLI state slugs: `new`, `ready`, `in-progress`, `in-review`, `done`
 - respect backend validation
 
 ## 7. Claiming Work Safely
@@ -325,20 +328,20 @@ Common error types may include:
 
 - run `kanban discovery --json` to verify correct flags and command structure
 
-### Mandatory Review Step
+### Mandatory Review Step (In Review State)
 
-Once implementation and local testing are finished, the agent MUST follow this procedure:
+When a card enters `In Review`, the agent MUST spawn a subagent to perform code review. This is a **required** workflow gate.
 
-1. **Transition to Review**: Move the card to `In Review` state.
+1. **Transition to Review**: Move the card to `In Review` state only after implementation is complete and tests pass.
    `kanban cards set-state --id <card-id> --to in-review --json`
 
-2. **Invoke Reviewer**: Spawn a specialized subagent (e.g., `codebase_investigator`) to audit the changes.
-   Prompt: "Review the recent changes in [path]. Check for correctness, security, and style."
+2. **Spawn Reviewer Subagent**: Launch a specialized subagent to audit the changes. This is **mandatory**, not optional.
+   Prompt the subagent: "Review the recent changes in [path]. Check for correctness, security, and style."
 
 3. **Document Findings**: All issues found MUST be added as comments to the card.
    `kanban cards comment --id <card-id> --body "Finding: ..." --kind note --author agent --json`
 
-4. **Iterate**: If fixes are needed, move back to `In Progress`, fix, and repeat.
+4. **Iterate**: If review finds issues, move back to `In Progress`, fix, and repeat the review cycle.
 
 ## 9. Final Summary (Critical)
 
