@@ -149,6 +149,10 @@ Unless the human explicitly creates and assigns a card, the agent should take th
 
 ## 2. Understanding a Card
 
+To retrieve the full card details, including the complete comment history, use:
+
+`kanban cards show --id <card-id> --json`
+
 Before working, focus on:
 
 - Goal
