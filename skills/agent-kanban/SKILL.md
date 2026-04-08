@@ -1,3 +1,8 @@
+---
+name: agent-kanban
+description: Use when agents need to interact with the agent-kanban system to pick work, execute tasks, update card state, record progress, and complete cards within the repo-backed workflow
+---
+
 # Agent Kanban Skill
 
 ## Overview
