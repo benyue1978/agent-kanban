@@ -82,6 +82,7 @@ New → Ready → In Progress → In Review → Done
 **Agent must:**
 - Final Summary exists with:
   - ### What was done
+  - ### Key Decisions
   - ### Result / Links (commit URL, PR, etc.)
   - ### DoD Check
 - Verification evidence recorded as `verification` kind comment
@@ -141,7 +142,7 @@ New → Ready → In Progress → In Review → Done
 | New → Ready | Goal, Context, Scope, Definition of Done |
 | Ready → In Progress | ownership claimed |
 | In Progress → In Review | implementation complete, tests pass, reviewer subagent spawned |
-| In Review → Done | Final Summary + verification comment |
+| In Review → Done | Final Summary (What was done, Key Decisions, Result/Links, DoD Check) + verification comment |
 
 ### Error Handling
 
