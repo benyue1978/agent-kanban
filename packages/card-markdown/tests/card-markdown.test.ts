@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   appendCompletionSummary,
+  replaceCompletionSummary,
   getProtectedSections,
   isSectionComplete,
   validateCompletionSummary,
@@ -150,6 +151,54 @@ Used Fastify`);
       expect(isSectionComplete("Has TODO")).toBe(false);
       expect(isSectionComplete("Has [ ]")).toBe(false);
       expect(isSectionComplete("Complete section")).toBe(true);
+    });
+  });
+
+  describe("replaceCompletionSummary", () => {
+    it("replaces content in existing final summary block", () => {
+      const result = replaceCompletionSummary(
+        sample,
+        `### What was done
+Completely new content
+
+### Result / Links
+Commit: xyz789`
+      );
+      expect(result).toContain("Completely new content");
+      expect(result).not.toContain("Built the API");
+      expect(result).toContain("Commit: xyz789");
+    });
+
+    it("creates final summary block if missing", () => {
+      const result = replaceCompletionSummary(
+        `# Card
+
+## Goal
+Ship the API`,
+        `### What was done
+Built the API
+
+### Result / Links
+Commit: abc1234`
+      );
+      expect(result).toContain(`## Final Summary`);
+      expect(result).toContain("Built the API");
+    });
+
+    it("replaces when final summary exists but has content", () => {
+      const result = replaceCompletionSummary(
+        sample,
+        `### What was done
+New content
+
+### Result / Links
+Commit: new123`
+      );
+      expect(result).toContain("New content");
+      expect(result).not.toContain("Built the API");
+      expect(result).toContain("Commit: new123");
+      // Should only have one occurrence of Final Summary
+      expect(result.match(/## Final Summary/g)?.length).toBe(1);
     });
   });
 });

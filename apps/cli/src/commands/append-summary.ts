@@ -17,5 +17,6 @@ export async function runAppendSummaryCommand(options: any, { client, env }: Com
     revision: card.revision,
     actorId: resolveActorId(options, env),
     summaryMd: await readTextFile(file),
+    ...(options.replace ? { replace: true } : {}),
   });
 }

@@ -1,5 +1,6 @@
 import {
   appendCompletionSummary,
+  replaceCompletionSummary,
   getProtectedSections,
   isSectionComplete,
   validateCompletionSummary,
@@ -548,7 +549,8 @@ export class CardService {
     cardId: string,
     revision: number,
     summaryMd: string,
-    actorId?: string
+    actorId?: string,
+    replace?: boolean
   ): Promise<CardDetail> {
     const existing = await this.prisma.card.findUnique({
       where: { id: cardId },
@@ -568,7 +570,9 @@ export class CardService {
       throw new ApiError(409, "revision_conflict", "stale revision for summary update");
     }
 
-    const descriptionMd = appendCompletionSummary(existing.descriptionMd, summaryMd);
+    const descriptionMd = replace
+      ? replaceCompletionSummary(existing.descriptionMd, summaryMd)
+      : appendCompletionSummary(existing.descriptionMd, summaryMd);
     const actor = await resolveActor(this.prisma, actorId, existing.ownerId);
 
     return this.prisma.$transaction(async (tx) => {

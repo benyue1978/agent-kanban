@@ -91,8 +91,13 @@ NEVER use `--assigned-to` with `--state new` - it will always return empty.
 ### Assign owner
 `kanban cards assign-owner --id <id> --to <owner-id|none> --json`
 
-### Append summary
+### Append/Replace summary
 `kanban cards append-summary --id <id> --file summary.md --json`
+
+Use `--replace` to overwrite the entire Final Summary instead of appending:
+`kanban cards append-summary --id <id> --file summary.md --replace --json`
+
+This is useful when the Final Summary has duplicate sections or incorrect content.
 
 ### Update card (full edit)
 ```

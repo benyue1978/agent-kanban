@@ -58,7 +58,7 @@ export const cardRoutes: FastifyPluginAsync = async (app) => {
     const params = request.params as { id: string };
     const body = request.body as Omit<AppendCardSummaryRequest, "cardId">;
     return {
-      card: await service.appendSummary(params.id, body.revision, body.summaryMd, body.actorId),
+      card: await service.appendSummary(params.id, body.revision, body.summaryMd, body.actorId, body.replace),
     };
   });
 

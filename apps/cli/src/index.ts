@@ -254,9 +254,10 @@ cards
 
 cards
   .command("append-summary")
-  .description("Append summary to a card")
+  .description("Append or replace summary on a card")
   .requiredOption("--id <card-id>", "Card ID")
   .requiredOption("--file <path>", "Path to markdown file")
+  .option("--replace", "Replace entire Final Summary instead of appending")
   .action(async (options) => {
     await executeCommand(runAppendSummaryCommand, options);
   });

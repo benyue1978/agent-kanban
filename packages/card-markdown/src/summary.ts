@@ -95,3 +95,34 @@ export function appendCompletionSummary(markdown: string, summaryMarkdown: strin
     )
   );
 }
+
+export function replaceCompletionSummary(markdown: string, summaryMarkdown: string): string {
+  const trimmedMarkdown = markdown.trimEnd();
+  const normalizedSummary = normalizeBlock(summaryMarkdown);
+
+  if (/^##\s+Final Summary\s*$/m.test(normalizedSummary)) {
+    throw new SummaryAppendError(
+      "invalid_summary_append: append payload must not include the '## Final Summary' heading"
+    );
+  }
+
+  const finalSummaryBlock = findProtectedSection(markdown, "Final Summary");
+
+  if (finalSummaryBlock === undefined) {
+    const separator = trimmedMarkdown.length === 0 ? "" : "\n\n";
+    return `${trimmedMarkdown}${separator}## Final Summary\n${normalizedSummary}\n`;
+  }
+
+  // Replace the entire content within Final Summary
+  const prefix = markdown.slice(0, finalSummaryBlock.bodyStart);
+  const suffix = markdown.slice(finalSummaryBlock.end).replace(/^\n+/, "");
+  const suffixPrefix = suffix.length === 0 ? "\n" : "\n\n";
+  const contentPrefix = prefix.endsWith("\n") ? "" : "\n";
+
+  return (
+    `${prefix}${contentPrefix}${normalizedSummary}${suffixPrefix}${suffix}`.replace(
+      /\n{3,}/g,
+      "\n\n"
+    )
+  );
+}

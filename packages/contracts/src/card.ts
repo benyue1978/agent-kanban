@@ -258,6 +258,7 @@ export interface AppendCardSummaryRequest {
   revision: number;
   summaryMd: string;
   actorId?: string;
+  replace?: boolean;
 }
 
 export interface AppendCardSummaryResponse {

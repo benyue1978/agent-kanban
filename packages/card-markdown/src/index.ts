@@ -7,6 +7,7 @@ export {
 } from "./anchors.js";
 export {
   appendCompletionSummary,
+  replaceCompletionSummary,
   isSectionComplete,
   SummaryValidationError,
   validateCompletionSummary,
