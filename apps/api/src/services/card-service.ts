@@ -163,7 +163,7 @@ function hasRequiredSections(title: string, descriptionMd: string): boolean {
 
   for (const section of coreSections) {
     const content = sections[section.key as keyof ProtectedSections];
-    if (content === undefined || !isSectionComplete(content)) {
+    if (content === undefined) {
       return false;
     }
   }
