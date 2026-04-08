@@ -139,12 +139,23 @@ describe.sequential("comment and inbox routes", () => {
     });
     expect(assignResponse.statusCode).toBe(200);
 
-    const stateResponse = await app.inject({
+    const inReviewResponse = await app.inject({
       method: "POST",
       url: "/cards/card-comment-inbox-1/set-state",
       payload: {
         actorId: "human-song",
         revision: assignResponse.json().card.revision,
+        to: "In Review",
+      },
+    });
+    expect(inReviewResponse.statusCode).toBe(200);
+
+    const stateResponse = await app.inject({
+      method: "POST",
+      url: "/cards/card-comment-inbox-1/set-state",
+      payload: {
+        actorId: "human-song",
+        revision: inReviewResponse.json().card.revision,
         to: "Done",
       },
     });
@@ -156,7 +167,7 @@ describe.sequential("comment and inbox routes", () => {
       url: "/cards/card-comment-inbox-1/update-markdown",
       payload: {
         actorId: "agent-peer",
-        revision: assignResponse.json().card.revision,
+        revision: inReviewResponse.json().card.revision,
         descriptionMd: `# Review-ready API task
 
 ## Goal
@@ -238,6 +249,7 @@ Commit: abc1234
 
     expect(events.map((event) => event.type)).toEqual([
       "owner_assigned",
+      "state_changed",
       "markdown_updated",
       "summary_updated",
       "comment_added",
