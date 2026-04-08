@@ -1,115 +1,119 @@
----
-name: agent-kanban
-description: Use when agents need to interact with the agent-kanban system to pick work, execute tasks, update card state, record progress, and complete cards within the repo-backed workflow
----
+# Agent Kanban Skill
 
 ## Overview
 
-This skill defines how an agent should interact with the agent-kanban system.
+This skill defines how an agent interacts with the agent-kanban system to track and complete work.
 
-## Agent Quick Start
+**Core principles:**
+- Repo is implementation truth - code, tests, docs are authoritative
+- Kanban is process truth - state, ownership, comments live in Kanban
+- Comments are timeline - record progress, do not replace Final Summary
+- Never test against production - verify DATABASE_URL targets port 5434/dev
 
-Before starting any work, verify your environment:
+---
 
-1. **Discovery**: `kanban discovery --json`
-2. **Find IDs**: `kanban collaborators list --json`
-3. **Check Configuration**: `kanban config --json`
-4. **Smoke Test**: `kanban cards list --json`
+## Understanding Progress
 
-Use a local `.kanban.json` for defaults:
-```json
-{
-  "apiUrl": "http://127.0.0.1:3001",
-  "actorId": "agent",
-  "projectId": "cmnlv..."
-}
-```
+At the start of a session, understand the full board state:
 
-## Core Principles
+- `kanban cards list --project <id> --state new` - new cards (unowned)
+- `kanban cards list --project <id> --state ready` - ready to pick up
+- `kanban cards list --project <id> --state in-progress` - currently working
+- `kanban cards list --project <id> --state in-review` - awaiting review
+- `kanban cards list --project <id> --state done` - completed
+- `kanban config --json` - check current config
 
-1. **Repo is implementation truth** - code, tests, docs are authoritative
-2. **Kanban is process truth** - state, ownership, comments live in Kanban
-3. **Comments are timeline** - record progress, do not replace Final Summary
-4. **Quality descriptions required** - every card MUST have Goal, Context, Scope, Definition of Done (see `assets/card-template.md`)
-5. **Final Summary required before Done** - includes What was done, Result/Links, DoD Check
-6. **Safety first** - never test against production; verify DATABASE_URL targets port 5434/dev
+---
 
-## Workflow Behavior
+## Pushing Cards Through Kanban
 
 ### State Machine
-Cards MUST follow this sequence:
+
 ```
 New → Ready → In Progress → In Review → Done
 ```
-CLI state slugs: `new`, `ready`, `in-progress`, `in-review`, `done`
 
 ### New → Ready
-**Requirements:**
-- Card description MUST include: `## Goal`, `## Context`, `## Scope`, `## Definition of Done`
-- These are PLANNING sections (NOT Final Summary - Final Summary is only for Done)
-- Transition MUST use `--actor human`: `kanban cards set-state --id <id> --to ready --actor human --revision <n> --json`
 
-**If you get `missing_required_section` error:**
+**Agent must:**
+- Collaborate with human to fill in: Goal, Context, Scope, Definition of Done
+- Ensure all four sections have real content (not placeholder text)
+- Get human approval on the plan
+- Run: `kanban cards set-state --id <id> --to ready --actor human --revision <n> --json`
+
+**Don't:**
+- Don't transition without human sign-off on the plan
+- Don't use `--actor agent` - human must own this decision
+- Don't skip any of the four required sections
+
+**If error `missing_required_section`:**
 1. Fetch card: `kanban cards show --id <id> --json`
-2. Check description has Goal, Context, Scope, Definition of Done
-3. If missing, update: `kanban cards update --id <id> --file card.md --revision <n> --json`
+2. Check which section is missing: Goal, Context, Scope, Definition of Done
+3. Update: `kanban cards update --id <id> --file card.md --revision <n> --json`
 4. Retry with `--actor human`
 
 ### Ready → In Progress
-- Claim with `kanban cards set-state --id <id> --to in-progress --owner agent --revision <n> --json`
-- No implementation until card is In Progress
+
+**Agent must:**
+- Claim ownership: `kanban cards set-state --id <id> --to in-progress --owner <owner-id> --revision <n> --json`
+- Implementation begins only after claiming
+
+**Don't:**
+- Don't start implementation before claiming the card
 
 ### In Progress → In Review
-- Move to In Review only after implementation is complete and tests pass
-- **MANDATORY**: Spawn a subagent to review code changes. This CANNOT be skipped.
-  `kanban cards set-state --id <id> --to in-review --owner agent --revision <n> --json`
 
-### In Review
-1. Spawn reviewer subagent immediately (not optional)
-2. Document all findings as comments: `kanban cards comment --id <id> --body "..." --kind note --author agent --json`
-3. If issues found: move back to In Progress, fix, re-review
-4. If review passes: move to Done
+**Agent must:**
+- Verify implementation is complete and tests pass
+- Spawn subagent to review code changes (MANDATORY, cannot skip)
+- Move to In Review: `kanban cards set-state --id <id> --to in-review --owner <owner-id> --revision <n> --json`
+- Document review findings as comments
+
+**Don't:**
+- Don't skip the reviewer subagent - it's required
+
+**If review finds issues:**
+- Move back to In Progress: `kanban cards set-state --id <id> --to in-progress ...`
+- Fix issues
+- Re-review before moving to Done
 
 ### In Review → Done
-**Requirements:**
-- Final Summary exists with `### What was done`, `### Result / Links`, `### DoD Check`
+
+**Agent must:**
+- Final Summary exists with:
+  - ### What was done
+  - ### Result / Links (commit URL, PR, etc.)
+  - ### DoD Check
 - Verification evidence recorded as `verification` kind comment
+- Run: `kanban cards set-state --id <id> --to done --actor human --revision <n> --json`
 
-### Listing Cards
-- **New cards**: `kanban cards list --project <id> --state new` (no `--assigned-to` - new cards have no owner)
-- **Ready cards**: `kanban cards list --project <id> --state ready`
-- **My cards**: `kanban cards list --project <id> --state in-progress --assigned-to agent`
-- **In review**: `kanban cards list --project <id> --state in-review`
+**Don't:**
+- Don't move without Final Summary
+- Don't move without verification evidence (test output, logs, screenshots)
+- Don't link to commits that don't exist
 
-NEVER use `--assigned-to` with `--state new` - it will always return empty.
+---
 
-## Structured Commands
+## Command Reference
 
-### Set state
-`kanban cards set-state --id <id> --to <state> --owner <owner-id> --actor <actor-id> --revision <n> --json`
+### Discovery & Config
+- `kanban discovery --json` - show available commands and flags
+- `kanban config --json` - show current config
 
-### Assign owner
-`kanban cards assign-owner --id <id> --to <owner-id|none> --json`
+### Card Commands
+- `kanban cards list --project <id> --state <state> [--assigned-to <id>]` - list cards
+- `kanban cards show --id <id> --json` - show card details
+- `kanban cards create --project <id> --file card.md --json` - create card
+- `kanban cards update --id <id> --file card.md --revision <n> --json` - update card
+- `kanban cards append-summary --id <id> --file summary.md [--replace] --json` - append/replace summary
 
-### Append/Replace summary
-`kanban cards append-summary --id <id> --file summary.md --json`
+### State Transitions
+- `kanban cards set-state --id <id> --to <state> [--owner <id>] [--actor <id>] --revision <n> --json`
 
-Use `--replace` to overwrite the entire Final Summary instead of appending:
-`kanban cards append-summary --id <id> --file summary.md --replace --json`
+### Comments
+- `kanban cards comment --id <id> --body "..." --kind <progress|question|decision|note|verification> --author <id> --json`
 
-This is useful when the Final Summary has duplicate sections or incorrect content.
-
-### Update card (full edit)
-```
-kanban cards show --id <id> --json > card.md
-# edit card.md
-kanban cards update --id <id> --file card.md --revision <n> --json
-```
-
-### Add comment
-`kanban cards comment --id <id> --body "..." --kind <progress|question|decision|note|verification> --author <id> --json`
-
-## Comment Usage
+### Comment Kinds
 
 | Kind | Use for |
 |------|---------|
@@ -121,21 +125,37 @@ kanban cards update --id <id> --file card.md --revision <n> --json
 
 If a decision affects final understanding, reflect it in Final Summary before Done.
 
-## Conflict Handling
+---
 
-Common errors: `invalid_translict`, `missing_owner`, `missing_required_section`, `summary_required`, `forbidden_action`, `revision_conflict`, `claim_conflict`, `cli_usage_error`
+## Quick Reference
+
+### State Machine
+```
+New → Ready → In Progress → In Review → Done
+```
+
+### Required Fields Per Transition
+
+| Transition | Required |
+|------------|----------|
+| New → Ready | Goal, Context, Scope, Definition of Done |
+| Ready → In Progress | ownership claimed |
+| In Progress → In Review | implementation complete, tests pass, reviewer subagent spawned |
+| In Review → Done | Final Summary + verification comment |
+
+### Error Handling
 
 | Error | Action |
 |-------|--------|
 | `revision_conflict` | Re-fetch card, inspect changes, re-apply |
-| `claim_conflict` | Do not force takeover; choose another card |
-| `missing_required_section` | Update missing section; do not bypass |
+| `claim_conflict` | Choose another card |
+| `missing_required_section` | Complete missing section, don't bypass |
+| `summary_required` | Add Final Summary before Done |
 | `cli_usage_error` | Run `kanban discovery --json` to verify flags |
 
-Use `--dry-run` to validate before destructive updates:
-`kanban cards set-state --id <id> --to done --dry-run --json`
+Use `--dry-run` to validate before destructive updates.
 
-## Anti-patterns
+### Anti-Patterns
 
 Do not:
 - Treat comments as final deliverable
@@ -145,7 +165,5 @@ Do not:
 - Create temp `.md` files in workspace root
 - Move to Done without Final Summary and verification evidence
 - Move to Done without linking to real commits
-
-## Working Philosophy
-
-The agent's job is not just to do work, but to leave the system understandable for the next reader. A good session leaves a card that a human can understand without replaying the entire conversation.
+- Use `--actor agent` for New → Ready transition
+- Skip the reviewer subagent for In Progress → In Review
