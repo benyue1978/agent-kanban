@@ -21,7 +21,7 @@ At the start of a session, understand the full board state:
 - `kanban cards list --project <id> --state in-progress` - currently working
 - `kanban cards list --project <id> --state in-review` - awaiting review
 - `kanban cards list --project <id> --state done` - completed
-- `kanban config --json` - check current config
+- `kanban config` - check current config
 
 ---
 
@@ -39,7 +39,7 @@ New → Ready → In Progress → In Review → Done
 - Collaborate with human to fill in: Goal, Context, Scope, Definition of Done
 - Ensure all four sections have real content (not placeholder text)
 - Get human approval on the plan
-- Run: `kanban cards set-state --id <id> --to ready --actor human --revision <n> --json`
+- Run: `kanban cards set-state --id <id> --to ready --actor human --revision <n>`
 
 **Don't:**
 - Don't transition without human sign-off on the plan
@@ -47,15 +47,15 @@ New → Ready → In Progress → In Review → Done
 - Don't skip any of the four required sections
 
 **If error `missing_required_section`:**
-1. Fetch card: `kanban cards show --id <id> --json`
+1. Fetch card: `kanban cards show --id <id>`
 2. Check which section is missing: Goal, Context, Scope, Definition of Done
-3. Update: `kanban cards update --id <id> --file card.md --revision <n> --json`
+3. Update: `kanban cards update --id <id> --file card.md --revision <n>`
 4. Retry with `--actor human`
 
 ### Ready → In Progress
 
 **Agent must:**
-- Claim ownership: `kanban cards set-state --id <id> --to in-progress --owner <owner-id> --revision <n> --json`
+- Claim ownership: `kanban cards set-state --id <id> --to in-progress --owner <owner-id> --revision <n>`
 - Implementation begins only after claiming
 
 **Don't:**
@@ -66,7 +66,7 @@ New → Ready → In Progress → In Review → Done
 **Agent must:**
 - Verify implementation is complete and tests pass
 - Spawn subagent to review code changes (MANDATORY, cannot skip)
-- Move to In Review: `kanban cards set-state --id <id> --to in-review --owner <owner-id> --revision <n> --json`
+- Move to In Review: `kanban cards set-state --id <id> --to in-review --owner <owner-id> --revision <n>`
 - Document review findings as comments
 
 **Don't:**
@@ -85,7 +85,7 @@ New → Ready → In Progress → In Review → Done
   - ### Result / Links (commit URL, PR, etc.)
   - ### DoD Check
 - Verification evidence recorded as `verification` kind comment
-- Run: `kanban cards set-state --id <id> --to done --actor human --revision <n> --json`
+- Run: `kanban cards set-state --id <id> --to done --actor human --revision <n>`
 
 **Don't:**
 - Don't move without Final Summary
@@ -97,21 +97,21 @@ New → Ready → In Progress → In Review → Done
 ## Command Reference
 
 ### Discovery & Config
-- `kanban discovery --json` - show available commands and flags
-- `kanban config --json` - show current config
+- `kanban discovery` - show available commands and flags
+- `kanban config` - show current config
 
 ### Card Commands
-- `kanban cards list --project <id> --state <state> [--assigned-to <id>]` - list cards
-- `kanban cards show --id <id> --json` - show card details
-- `kanban cards create --project <id> --file card.md --json` - create card
-- `kanban cards update --id <id> --file card.md --revision <n> --json` - update card
-- `kanban cards append-summary --id <id> --file summary.md [--replace] --json` - append/replace summary
+- `kanban cards list --project <id> --state <state>` - list cards
+- `kanban cards show --id <id>` - show card details
+- `kanban cards create --project <id> --title <title> --description-file <path>` - create card
+- `kanban cards update --id <id> --file <path> --revision <n>` - update card
+- `kanban cards append-summary --id <id> --file <path>` - append summary (use `--replace` to overwrite)
 
 ### State Transitions
-- `kanban cards set-state --id <id> --to <state> [--owner <id>] [--actor <id>] --revision <n> --json`
+- `kanban cards set-state --id <id> --to <state>` - transition card state
 
 ### Comments
-- `kanban cards comment --id <id> --body "..." --kind <progress|question|decision|note|verification> --author <id> --json`
+- `kanban cards comment --id <id> --body "..." --kind <kind> --author <id>` - add comment
 
 ### Comment Kinds
 
@@ -151,7 +151,7 @@ New → Ready → In Progress → In Review → Done
 | `claim_conflict` | Choose another card |
 | `missing_required_section` | Complete missing section, don't bypass |
 | `summary_required` | Add Final Summary before Done |
-| `cli_usage_error` | Run `kanban discovery --json` to verify flags |
+| `cli_usage_error` | Run `kanban discovery` to verify flags |
 
 Use `--dry-run` to validate before destructive updates.
 
