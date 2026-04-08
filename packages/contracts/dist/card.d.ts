@@ -173,6 +173,15 @@ export interface UpdateCardMarkdownRequest {
     descriptionMd: string;
     actorId?: string;
 }
+export interface UpdateCardTitleRequest {
+    cardId: string;
+    revision: number;
+    title: string;
+    actorId?: string;
+}
+export interface UpdateCardTitleResponse {
+    card: CardDetail;
+}
 export interface UpdateCardMarkdownResponse {
     card: CardDetail;
 }
@@ -214,6 +223,7 @@ export interface AppendCardSummaryRequest {
     revision: number;
     summaryMd: string;
     actorId?: string;
+    replace?: boolean;
 }
 export interface AppendCardSummaryResponse {
     card: SummaryPresentCard;

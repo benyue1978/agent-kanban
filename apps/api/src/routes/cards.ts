@@ -6,6 +6,7 @@ import type {
   SetCardPriorityRequest,
   SetCardStateRequest,
   UpdateCardMarkdownRequest,
+  UpdateCardTitleRequest,
 } from "@agent-kanban/contracts";
 import { CardService } from "../services/card-service.js";
 import { CommentService } from "../services/comment-service.js";
@@ -51,6 +52,14 @@ export const cardRoutes: FastifyPluginAsync = async (app) => {
     const body = request.body as Omit<UpdateCardMarkdownRequest, "cardId">;
     return {
       card: await service.updateMarkdown(params.id, body.revision, body.descriptionMd, body.actorId),
+    };
+  });
+
+  app.post("/cards/:id/update-title", async (request) => {
+    const params = request.params as { id: string };
+    const body = request.body as Omit<UpdateCardTitleRequest, "cardId">;
+    return {
+      card: await service.updateTitle(params.id, body.revision, body.title, body.actorId),
     };
   });
 

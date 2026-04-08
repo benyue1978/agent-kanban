@@ -207,6 +207,17 @@ export interface UpdateCardMarkdownRequest {
   actorId?: string;
 }
 
+export interface UpdateCardTitleRequest {
+  cardId: string;
+  revision: number;
+  title: string;
+  actorId?: string;
+}
+
+export interface UpdateCardTitleResponse {
+  card: CardDetail;
+}
+
 export interface UpdateCardMarkdownResponse {
   card: CardDetail;
 }

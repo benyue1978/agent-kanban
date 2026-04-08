@@ -497,6 +497,60 @@ export class CardService {
     return await this.getCard(cardId);
   }
 
+  async updateTitle(
+    cardId: string,
+    revision: number,
+    title: string,
+    actorId?: string
+  ): Promise<CardDetail> {
+    const existing = await this.prisma.card.findUnique({
+      where: { id: cardId },
+      select: {
+        id: true,
+        state: true,
+        ownerId: true,
+        projectId: true,
+        revision: true,
+      },
+    });
+
+    if (existing === null) {
+      throw new ApiError(404, "invalid_transition", "card not found");
+    }
+
+    
+    if (existing.revision !== revision) {
+      throw new ApiError(409, "revision_conflict", "stale revision for title update");
+    }
+
+    if (title.length === 0) {
+      throw new ApiError(400, "invalid_transition", "title cannot be empty");
+    }
+
+    const actor = await resolveActor(this.prisma, actorId, existing.ownerId);
+
+    return this.prisma.$transaction(async (tx) => {
+      const updated = await new CardRepository(tx as PrismaClient).updateById(cardId, {
+        title,
+        revision: {
+          increment: 1,
+        },
+      });
+
+      await createEvent(tx, {
+        actorId: actor?.id ?? null,
+        cardId,
+        projectId: existing.projectId,
+        type: "markdown_updated",
+        payloadJson: {
+          revision: updated.revision,
+        },
+      });
+
+      return updated;
+    });
+  }
+
   async updateMarkdown(
     cardId: string,
     revision: number,

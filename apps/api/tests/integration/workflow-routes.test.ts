@@ -357,7 +357,7 @@ Build
       method: "POST",
       url: "/cards/card-workflow-2/set-state",
       payload: {
-        actorId: "agent-workflow-1", 
+        actorId: "agent-workflow-1",
         to: "Ready",
         revision: 2,
       },
@@ -366,5 +366,97 @@ Build
     expect(response.statusCode).toBe(400);
     expect(response.json().error.code).toBe("missing_required_section");
     expect(response.json().error.message).toContain("required sections");
+  });
+
+  it("updates title on a New card", async () => {
+    const app = await buildApp({ prisma });
+
+    const response = await app.inject({
+      method: "POST",
+      url: "/cards/card-workflow-2/update-title",
+      payload: {
+        revision: 2,
+        title: "Renamed card",
+      },
+    });
+
+    expect(response.statusCode).toBe(200);
+    expect(response.json().card.title).toBe("Renamed card");
+    expect(response.json().card.revision).toBe(3);
+  });
+
+  it("updates title on a Ready card", async () => {
+    const app = await buildApp({ prisma });
+
+    const response = await app.inject({
+      method: "POST",
+      url: "/cards/card-workflow-1/update-title",
+      payload: {
+        revision: 1,
+        title: "Backend skeleton renamed",
+      },
+    });
+
+    expect(response.statusCode).toBe(200);
+    expect(response.json().card.title).toBe("Backend skeleton renamed");
+    expect(response.json().card.revision).toBe(2);
+  });
+
+  it("returns revision_conflict when updating title with stale revision", async () => {
+    const app = await buildApp({ prisma });
+
+    const first = await app.inject({
+      method: "POST",
+      url: "/cards/card-workflow-2/update-title",
+      payload: {
+        revision: 2,
+        title: "First rename",
+      },
+    });
+
+    const second = await app.inject({
+      method: "POST",
+      url: "/cards/card-workflow-2/update-title",
+      payload: {
+        revision: 2,
+        title: "Second rename",
+      },
+    });
+
+    expect(first.statusCode).toBe(200);
+    expect(second.statusCode).toBe(409);
+    expect(second.json().error.code).toBe("revision_conflict");
+  });
+
+  it("returns error when title is empty", async () => {
+    const app = await buildApp({ prisma });
+
+    const response = await app.inject({
+      method: "POST",
+      url: "/cards/card-workflow-2/update-title",
+      payload: {
+        revision: 2,
+        title: "",
+      },
+    });
+
+    expect(response.statusCode).toBe(400);
+    expect(response.json().error.code).toBe("invalid_transition");
+  });
+
+  it("returns not found when card does not exist", async () => {
+    const app = await buildApp({ prisma });
+
+    const response = await app.inject({
+      method: "POST",
+      url: "/cards/nonexistent/update-title",
+      payload: {
+        revision: 1,
+        title: "No such card",
+      },
+    });
+
+    expect(response.statusCode).toBe(404);
+    expect(response.json().error.code).toBe("invalid_transition");
   });
 });
